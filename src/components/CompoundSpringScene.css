@@ -1,0 +1,14 @@
+.compound-spring-scene{touch-action:none}
+.compound-spring-scene__spring path{fill:none;stroke-width:1.8;stroke-linecap:round}
+.compound-spring-scene__spring text{font:12px ui-monospace,monospace}
+.compound-spring-scene__hatch{fill:none;stroke:#686868;stroke-width:1}
+.compound-spring-scene__junction{fill:none;stroke:#bcbcbc;stroke-width:3}
+.compound-spring-scene__collector{fill:none;stroke:#bcbcbc;stroke-width:3}
+.compound-spring-scene__node-label{fill:#91c9b8;font:11px ui-monospace,monospace}
+.compound-spring-scene__node-value{fill:#91aa9f;font:10px ui-monospace,monospace}
+.compound-spring-scene__force{fill:none;stroke:#6ee7c9;stroke-width:1.5}
+.compound-spring-scene__force text{fill:#6ee7c9;stroke:none;font:11px ui-monospace,monospace}
+.compound-spring-scene__mass{touch-action:none;outline:none}
+.compound-spring-scene__mass:focus-visible .mass-outline{stroke:#fff;stroke-width:3}
+.compound-spring-scene__mass .mass-hit-target{fill:transparent;stroke:none;pointer-events:all}
+.compound-spring-scene-wrap.is-dragging{cursor:grabbing}

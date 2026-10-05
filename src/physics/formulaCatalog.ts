@@ -2,15 +2,17 @@ import { foundationFormulas } from './formulasFoundations'
 import { pendulumFormulas } from './formulasPendulum'
 import { networkFormulas } from './formulasNetwork'
 import { masslessFormulas } from './formulasMassless'
+import { compoundFormulas } from './formulasCompound'
 import type { FormulaEntry, FormulaScope } from './formulaTypes'
 
 export const formulaScopeLabels: Record<FormulaScope, string> = {
   pendulum: '01 · Spring pendulum',
   network: '02 · Spring network',
+  compound: '03 · Compound network',
   shared: 'Shared foundations',
   lecture: 'Lecture extensions',
 }
-export const formulaCatalog: FormulaEntry[] = [...pendulumFormulas, ...networkFormulas, ...foundationFormulas, ...masslessFormulas]
+export const formulaCatalog: FormulaEntry[] = [...pendulumFormulas, ...networkFormulas, ...compoundFormulas, ...foundationFormulas, ...masslessFormulas]
 
 export function searchFormulas(query: string, scope?: FormulaScope): FormulaEntry[] {
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean)

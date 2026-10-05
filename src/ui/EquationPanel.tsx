@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import type { Model, Parameters, PendulumMode, ProblemId, Snapshot } from '../physics/model';
+import { compoundDeformation, deriveCompoundStiffness } from '../physics/model';
 import { MathFormula } from './Math';
 
 type EquationPanelProps = {
@@ -107,6 +108,171 @@ function MasslessEquationPanel({ problem, parameters: p, snapshot: s, model, mod
   </aside>;
 }
 
+function CompoundEquationPanel({ parameters: p, model, snapshot: s }: EquationPanelProps) {
+  const [tab, setTab] = useState<EquationTab>('motion');
+  const tabId = useId();
+  const stiffness = deriveCompoundStiffness(p);
+  const nodes = compoundDeformation(p, s.x);
+  const labels = ['k₁ · left', 'k₁ · right', 'k₂', 'k₃ · left', 'k₃ · right', 'k₄', 'k₅'];
+  const springValues = [p.k1, p.k1, p.k2, p.k3, p.k3, p.k4, p.k5];
+  const springEnergies = nodes.extensions.map((extension, index) => 0.5 * springValues[index] * extension ** 2);
+  const physicalEnergy = springEnergies.reduce((sum, energy) => sum + energy, 0);
+  const staticShift = p.m * p.g / stiffness.kEquivalent;
+  const total = Math.max(0, s.totalEnergy);
+  return <aside className="equation-panel" aria-label="Compound network equations and learning notes">
+    <div className="equation-panel-heading">
+      <div><span className="eyebrow">{model.massless ? 'ZERO-MASS LIMIT' : 'THE MATH, IN MOTION'}</span><h2>{model.massless ? 'Static force balance' : 'Equation of motion'}</h2></div>
+      {!model.massless && <span className="live-equation-label"><span className="live-dot" /> Live</span>}
+    </div>
+    <section className="equation-card eom-card" aria-label="Compound equation and live substitution">
+      <p className="equation-card-kicker">03 / Compound network · seven springs</p>
+      <MathFormula tex={model.massless ? String.raw`k_{\mathrm{eq}}x=0,\qquad m=0` : String.raw`m\ddot x+k_{\mathrm{eq}}x=0`} />
+      <p className="equation-note">{model.massless
+        ? 'Zero inertia leaves a spring-force constraint. Positive equivalent stiffness fixes x = 0; no acceleration or oscillation frequency is determined by division.'
+        : 'Mass × acceleration + equivalent stiffness × displacement = 0. The final k₅ spring is the only spring attached directly to the moving mass.'}</p>
+      <div className="live-substitution-heading"><span>{model.massless ? 'Static constraint values' : 'Substitute this instant'}</span><output>t = {number(s.time, 4)} s</output></div>
+      <div className="live-factor-grid">
+        <LiveFactor label="Mass" symbol="m" value={p.m} unit="kg" />
+        <LiveFactor label="Equivalent stiffness" symbol={String.raw`k_{\mathrm{eq}}`} value={stiffness.kEquivalent} unit="N/m" />
+        <LiveFactor label={model.massless ? 'Equilibrium position' : 'Displacement'} symbol="x(t)" value={s.x} unit="m" changing={!model.massless} kind="position" />
+        {!model.massless && <LiveFactor label="Acceleration" symbol={String.raw`a=\ddot x(t)`} value={s.a} unit="m/s²" changing kind="acceleration" />}
+      </div>
+      {model.massless ? <>
+        <MathFormula tex={String.raw`k_{\mathrm{eq}}>0\quad\Longrightarrow\quad x=0`} />
+        <p className="equation-note">The display holds the balanced state. A displaced release is incompatible with this constraint; the view does not simulate an instantaneous settling process. Choose positive mass to restore oscillation.</p>
+      </> : <>
+        <MathFormula className="numeric-substitution" tex={String.raw`\begin{aligned}
+          &\underbrace{${texNumber(p.m)}}_{m\;[\mathrm{kg}]}\underbrace{(${texNumber(s.a)})}_{a\;[\mathrm{m/s^2}]}\\
+          &+\underbrace{${texNumber(stiffness.kEquivalent)}}_{k_{\mathrm{eq}}\;[\mathrm{N/m}]}\underbrace{(${texNumber(s.x)})}_{x\;[\mathrm m]}=${texNumber(s.residual)}\;\mathrm N
+        \end{aligned}`} />
+        <div className="equation-term-grid" aria-label="Signed force terms">
+          <div className="equation-term inertia-term"><span>m · a — inertia</span><output>{withSign(s.inertialTerm)}</output><small>N</small></div>
+          <div className="equation-term restoring-term"><span>k_eq · x — stiffness</span><output>{withSign(s.restoringTerm)}</output><small>N</small></div>
+          <div className="equation-term balance-term"><span>Sum</span><output>{number(s.residual)}</output><small>N</small></div>
+        </div>
+        <p className="equation-note rounding-note">The two equation terms cancel; the physical spring force is −k_eq x. Displayed numbers are rounded, while the model uses full precision.</p>
+      </>}
+    </section>
+
+    <div className="equation-tabs" role="tablist" aria-label="Explore the compound network">
+      {(['motion', 'derivation', 'energy'] as EquationTab[]).map((item) => <button key={item}
+        id={`${tabId}-${item}`} type="button" role="tab" aria-selected={tab === item}
+        aria-controls={`${tabId}-content`} tabIndex={tab === item ? 0 : -1}
+        className={tab === item ? 'active' : ''} onClick={() => setTab(item)}
+        onKeyDown={(event) => {
+          const tabs: EquationTab[] = ['motion', 'derivation', 'energy'];
+          const current = tabs.indexOf(item);
+          const next = event.key === 'ArrowRight' ? (current + 1) % tabs.length
+            : event.key === 'ArrowLeft' ? (current + tabs.length - 1) % tabs.length
+              : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
+          if (next < 0) return;
+          event.preventDefault();
+          setTab(tabs[next]);
+          event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus();
+        }}>{item[0].toUpperCase() + item.slice(1)}</button>)}
+    </div>
+    <div className="equation-tab-content" id={`${tabId}-content`} role="tabpanel" aria-labelledby={`${tabId}-${tab}`}>
+      {tab === 'motion' && <>
+        <section className="equation-card">
+          <p className="equation-card-kicker">{model.massless ? 'No inertial motion at 0 kg' : 'The harmonic response'}</p>
+          {model.massless ? <>
+            <MathFormula tex={String.raw`k_{\mathrm{eq}}x=0\;\Rightarrow\;x=0`} />
+            <p className="equation-note">Frequency and period are not defined for this zero-mass constraint. The limit as a positive mass approaches zero is different from setting mass exactly to zero.</p>
+          </> : <>
+            <MathFormula tex={String.raw`\begin{aligned}x(t)&=x_0\cos(\omega_nt)\\&+\frac{v_0}{\omega_n}\sin(\omega_nt)\end{aligned}`} />
+            <MathFormula className="numeric-substitution" tex={String.raw`\begin{aligned}x(t)&=${texNumber(model.initialCoordinate)}\cos(${texNumber(model.omega)}t)\\&+(${texNumber(model.initialRate / model.omega)})\sin(${texNumber(model.omega)}t)\;\mathrm m\end{aligned}`} />
+            <MathFormula tex={String.raw`a(t)=-\omega_n^2x(t)`} />
+            <p className="equation-note">Initial displacement sets the cosine term; initial velocity sets the sine term. Every connector follows this single mass coordinate through its force balance.</p>
+          </>}
+        </section>
+        {!model.massless && <section className="equation-card frequency-card">
+          <p className="equation-card-kicker">Natural rhythm</p>
+          <MathFormula tex={String.raw`\omega_n=\sqrt{k_{\mathrm{eq}}/m}`} />
+          <div className="equation-metrics">
+            <div><span>ωₙ / angular frequency</span><output>{number(model.omega)}<small> rad/s</small></output></div>
+            <div><span>f = ωₙ / 2π</span><output>{number(model.frequency)}<small> Hz</small></output></div>
+            <div><span>T = 2π / ωₙ</span><output>{number(model.period)}<small> s</small></output></div>
+          </div>
+          <p className="equation-note">Frequency depends on the reduced stiffness and mass. Changing release amplitude or gravity does not change this linear frequency.</p>
+        </section>}
+        <section className="equation-card">
+          <p className="equation-card-kicker">Position is measured from loaded equilibrium</p>
+          <MathFormula tex={String.raw`\Delta_s=\frac{mg}{k_{\mathrm{eq}}}=${texNumber(staticShift)}\;\mathrm m`} />
+          <p className="equation-note">This is the total static extension from the unstretched configuration. The animated x is an additional displacement about that loaded equilibrium. Gravity shifts the resting position; the graph and spring-extension readouts show the vibration increments.</p>
+        </section>
+      </>}
+
+      {tab === 'derivation' && <>
+        <section className="equation-card">
+          <p className="equation-card-kicker">1 / Combine each parallel pair</p>
+          <MathFormula tex={String.raw`k_{\mathrm{top}}=2k_1,\qquad k_{\mathrm{bottom}}=2k_3`} />
+          <MathFormula className="numeric-substitution" tex={String.raw`\begin{aligned}k_{\mathrm{top}}&=2(${texNumber(p.k1)})=${texNumber(stiffness.kTop)}\;\mathrm{N/m}\\k_{\mathrm{bottom}}&=2(${texNumber(p.k3)})=${texNumber(stiffness.kBottom)}\;\mathrm{N/m}\end{aligned}`} />
+          <p className="equation-note">Springs between the same two rigid nodes share extension, so their forces and stiffnesses add. There are two physical k₁ springs and two physical k₃ springs.</p>
+        </section>
+        <section className="equation-card">
+          <p className="equation-card-kicker">2 / Reduce the left chain in series</p>
+          <MathFormula tex={String.raw`k_{\mathrm{left}}=\left(\frac1{2k_1}+\frac1{k_2}+\frac1{2k_3}\right)^{-1}`} />
+          <MathFormula className="numeric-substitution" tex={String.raw`k_{\mathrm{left}}=\left(\frac1{${texNumber(stiffness.kTop)}}+\frac1{${texNumber(p.k2)}}+\frac1{${texNumber(stiffness.kBottom)}}\right)^{-1}=${texNumber(stiffness.kLeft)}\;\mathrm{N/m}`} />
+          <p className="equation-note">The three successive groups carry equal force. Their extensions add, which means their reciprocal stiffnesses add.</p>
+        </section>
+        <section className="equation-card">
+          <p className="equation-card-kicker">3 / Add k₄ in parallel</p>
+          <MathFormula tex={String.raw`k_{\mathrm{parallel}}=k_{\mathrm{left}}+k_4`} />
+          <MathFormula className="numeric-substitution" tex={String.raw`k_{\mathrm{parallel}}=${texNumber(stiffness.kLeft)}+${texNumber(p.k4)}=${texNumber(stiffness.kParallel)}\;\mathrm{N/m}`} />
+          <p className="equation-note">The complete left chain and k₄ connect the fixed support to the same collector.</p>
+        </section>
+        <section className="equation-card">
+          <p className="equation-card-kicker">4 / Put k₅ in series with the whole upper assembly</p>
+          <MathFormula tex={String.raw`k_{\mathrm{eq}}=\frac{k_{\mathrm{parallel}}k_5}{k_{\mathrm{parallel}}+k_5}`} />
+          <MathFormula className="numeric-substitution" tex={String.raw`k_{\mathrm{eq}}=\frac{${texNumber(stiffness.kParallel)}(${texNumber(p.k5)})}{${texNumber(stiffness.kParallel)}+${texNumber(p.k5)}}=${texNumber(stiffness.kEquivalent)}\;\mathrm{N/m}`} />
+          <p className="equation-note">All support-to-mass load paths pass through the final k₅ spring. Only its force acts directly on the mass.</p>
+        </section>
+        <section className="equation-card">
+          <p className="equation-card-kicker">5 / Solve the massless junctions</p>
+          <MathFormula tex={String.raw`\begin{aligned}c&=\frac{k_5}{k_{\mathrm{parallel}}+k_5}x\\F_L&=k_{\mathrm{left}}c\\u&=\frac{F_L}{2k_1},\qquad v=u+\frac{F_L}{k_2}\end{aligned}`} />
+          <div className="series-readouts">
+            <div><span>u / upper junction</span><output>{number(nodes.upperJunction)} m</output></div>
+            <div><span>v / lower junction</span><output>{number(nodes.lowerJunction)} m</output></div>
+            <div><span>c / collector above k₅</span><output>{number(nodes.collector)} m</output></div>
+          </div>
+          <MathFormula tex={String.raw`\begin{aligned}2k_1u&=k_2(v-u)=2k_3(c-v)\\F_L+k_4c&=k_5(x-c)\end{aligned}`} />
+          <p className="equation-note">All coordinates point downward from equilibrium. Each junction has zero net force. For x &gt; 0, all seven signed spring extensions are positive.</p>
+        </section>
+        <section className="equation-card">
+          <p className="equation-card-kicker">6 / Apply Newton’s law about loaded equilibrium</p>
+          <MathFormula tex={String.raw`\begin{aligned}mg&=k_{\mathrm{eq}}\Delta_s\\m\ddot x&=mg-k_{\mathrm{eq}}(\Delta_s+x)\\&=-k_{\mathrm{eq}}x\end{aligned}`} />
+          <p className="equation-note">The static preload cancels weight. Internal spring forces are transmitted through the massless nodes; they are not seven separate external forces on the mass.</p>
+        </section>
+      </>}
+
+      {tab === 'energy' && <>
+        <section className="equation-card energy-card">
+          <p className="equation-card-kicker">{model.massless ? 'Energy of the static state' : 'Energy trades places'}</p>
+          <MathFormula tex={String.raw`T=\tfrac12m\dot x^2,\qquad U=\tfrac12k_{\mathrm{eq}}x^2`} />
+          <EnergyBar label="Kinetic energy" value={s.kinetic} total={total} className="kinetic-energy" />
+          <EnergyBar label="Spring potential" value={s.springPotential} total={total} className="spring-energy" />
+          <div className="energy-total"><span>Total vibration energy</span><output>{number(s.totalEnergy, 4)} J</output></div>
+          <p className="equation-note">Energy is measured about loaded equilibrium. Static spring and gravity terms cancel in the reduced potential. No separate extra gravity term is added.</p>
+        </section>
+        <section className="equation-card">
+          <p className="equation-card-kicker">Every physical spring stores energy</p>
+          <MathFormula tex={String.raw`\begin{aligned}U&=2\left(\tfrac12k_1u^2\right)+\tfrac12k_2(v-u)^2\\&\quad+2\left(\tfrac12k_3(c-v)^2\right)\\&\quad+\tfrac12k_4c^2+\tfrac12k_5(x-c)^2\end{aligned}`} />
+          <div className="series-readouts">{labels.map((label, index) => <div key={label}><span>{label} / ½kδ²</span><output>{number(springEnergies[index], 4)} J</output></div>)}</div>
+          <div className="energy-total"><span>Sum of all seven</span><output>{number(physicalEnergy, 4)} J</output></div>
+          <MathFormula className="numeric-substitution" tex={String.raw`\sum_{i=1}^{7}\tfrac12k_i\delta_i^2=\tfrac12k_{\mathrm{eq}}x^2=${texNumber(physicalEnergy)}\;\mathrm J`} />
+          <p className="equation-note">All seven spring energies add, even though only k₅ acts directly on the mass. The energy sum matches the equivalent spring at every instant.</p>
+        </section>
+        {!model.massless && <section className="equation-card">
+          <p className="equation-card-kicker">Your release sets the energy</p>
+          <MathFormula tex={String.raw`E=\tfrac12mv_0^2+\tfrac12k_{\mathrm{eq}}x_0^2=\tfrac12k_{\mathrm{eq}}A^2`} />
+          <p className="equation-note">Displacement amplitude: <strong>{number(model.amplitude, 4)} m</strong>. The kinetic and potential shares change, while their sum stays constant.</p>
+        </section>}
+      </>}
+    </div>
+    <p className="equation-panel-footnote">SI units · linear springs · massless connectors · illustrative values</p>
+  </aside>;
+}
+
 export function EquationPanel({ problem, parameters: p, model, snapshot: s, mode = 'linear' }: EquationPanelProps) {
   const [tab, setTab] = useState<EquationTab>('motion');
   const [method, setMethod] = useState<DerivationMethod>('newton');
@@ -126,6 +292,10 @@ export function EquationPanel({ problem, parameters: p, model, snapshot: s, mode
       { label: 'Spring potential', value: s.springPotential, className: 'spring-energy' },
     ]
     : [{ label: 'Spring potential', value: s.springPotential, className: 'spring-energy' }];
+
+  if (problem === 'compound') {
+    return <CompoundEquationPanel problem={problem} parameters={p} model={model} snapshot={s} mode={mode} />;
+  }
 
   if (model.massless) {
     return <MasslessEquationPanel problem={problem} parameters={p} model={model} snapshot={s} mode={mode} />;

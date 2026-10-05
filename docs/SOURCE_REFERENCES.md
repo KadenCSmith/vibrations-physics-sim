@@ -2,7 +2,9 @@
 
 All 38 supplied lecture photographs were visually reviewed. Mathematical blanks and intermediate steps added to the formula library are marked completed / derived. Some pages contain concepts rather than equations. Original photographs and scans are not included in this repository.
 
-The two active apparatus diagrams are from `Adobe Scan Oct 4, 2026.pdf`. The exam network uses k₄ and k₅ in series; the lecture practice network in IMG_5928 uses k₃ and k₄ in series with k₅ direct. These are separately labeled.
+The first two apparatus diagrams are from `Adobe Scan Oct 4, 2026.pdf`. The exam network uses k₄ and k₅ in series; the lecture practice network in IMG_5928 uses k₃ and k₄ in series with k₅ direct. These are separately labeled.
+
+Simulation 03 comes from the user's `Screenshot 2026-10-04 at 6.40.13 PM.png` (the original filename uses a narrow space before PM). It asks for equivalent stiffness and, with a mass attached to the final k₅, natural frequency in rad/s and Hz and period. The diagram contains seven physical springs: two k₁, one k₂, two k₃, one k₄, and one k₅. The screenshot provides symbolic quantities, so the app's numerical values are illustrative. This screenshot is separate from the 38 reviewed lecture photographs and is not redistributed.
 
 | Photo | Content |
 | --- | --- |

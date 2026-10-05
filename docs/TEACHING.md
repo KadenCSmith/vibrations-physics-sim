@@ -1,6 +1,6 @@
 # Teaching notes
 
-The two simulations implement the undamped problems in Prof. Lee’s ENGR 317 exam review. The pendulum defaults to the full trigonometric equation, with a selectable small-angle comparison. The spring network is linear. The numerical defaults are illustrative because the source problems specify symbolic values. Physical inputs use SI units. Degrees appear only at angular input and display boundaries.
+The first two simulations implement the undamped problems in Prof. Lee’s ENGR 317 exam review; the third follows the separately supplied compound spring diagram. The pendulum defaults to the full trigonometric equation, with a selectable small-angle comparison. Both spring systems are linear. The numerical defaults are illustrative because the source problems specify symbolic values. Physical inputs use SI units. Degrees appear only at angular input and display boundaries.
 
 ## Problem 1: Spring pendulum
 
@@ -40,6 +40,26 @@ The series extension and force readouts refer to signed changes of spring length
 
 The effective potential of motion about loaded equilibrium is ½k_eq x². In absolute energy coordinates, changes in gravitational energy and in the static preload contribution to spring energy have equal and opposite linear terms. They cancel, leaving this quadratic vibration energy. The energy panel intentionally shows that effective energy rather than inventing an additional positive gravitational energy contribution.
 
+## Problem 3: Compound spring system
+
+Read the connectivity before reducing stiffness. There are seven springs: two identical k₁ springs, k₂, two identical k₃ springs, k₄, and k₅. Their five stiffness values are independent. The rigid junctions and springs have negligible mass.
+
+    k_top = 2k₁, k_bottom = 2k₃
+    k_L = [1/(2k₁) + 1/k₂ + 1/(2k₃)]⁻¹
+    k_P = k_L + k₄
+    k_eq = k_P k₅/(k_P + k₅)
+
+The parallel pairs share displacement and add forces. In the left series path, the three groups carry the same total force and their deformations add. That complete path and k₄ span the same ceiling-to-collector displacement, so their stiffnesses add. The final k₅ is in series with that combined assembly. Only k₅ acts directly on the bottom mass.
+
+Let x be mass displacement downward from loaded equilibrium, and dC the collector displacement. Then dC = k₅x/(k_P + k₅). The left path carries force magnitude |k_L dC|; its junction A moves by dA = k_L dC/(2k₁), and junction B by dB = dA + k_L dC/k₂. The animation solves these positions at the same instant as the mass, rather than moving every spring by x. Each physical spring's energy is ½kδ²; all seven energies sum to ½k_eq x².
+
+    m ẍ + k_eq x = 0
+    ωₙ = √(k_eq/m) rad/s
+    fₙ = ωₙ/(2π) Hz
+    T = 2π/ωₙ s
+
+These answer the three requested rhythm quantities. For an explicit example with every individual spring at 30 N/m and mass 2 kg, k_L = 15 N/m, k_P = 45 N/m, k_eq = 18 N/m, ωₙ = 3 rad/s, fₙ ≈ 0.4775 Hz and T ≈ 2.094 s. The app updates these results with the physical settings. Gravity sets the static extension mg/k_eq; it cancels from the oscillation equation measured about loaded equilibrium. Zero mass is the static constraint x = 0 and has no defined frequency or period.
+
 ## Analytical solution for linear modes
 
 For the network, or the small-angle pendulum comparison, let q = x or θ with initial coordinate q₀ and initial rate q̇₀:
@@ -73,7 +93,7 @@ If pendulum mass and spring stiffness are both zero, the torque equation is simp
 
 ## Interface intent
 
-Both models autoplay at quarter speed. Explicit Pause holds the clock until Play is pressed. Edits and problem changes restart the trajectory without changing that playback intent. Hidden tabs suspend animation and resume when visible.
+All models autoplay at quarter speed. Explicit Pause holds the clock until Play is pressed. Edits and problem changes restart the trajectory without changing that playback intent. Hidden tabs suspend animation and resume when visible.
 
 The side panel connects the drawing to the equation at the same simulation time. Constants and time-varying quantities are labeled with symbols, names, units, and consistent colors, so each number can be traced into the substituted equation. Its motion tab gives the response and natural frequency; its derivation tab explains how the equation is assembled; its energy tab displays the transfer between kinetic and potential energy. The spring pendulum derivation offers both Newton and Lagrange approaches. Equation rendering includes semantic MathML for assistive technology.
 

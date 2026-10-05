@@ -1,5 +1,5 @@
-/** Undamped models for the two ENGR 317 exam-review diagrams. */
-export type ProblemId = 'pendulum' | 'network';
+/** Undamped models for the ENGR 317 exam-review diagrams. */
+export type ProblemId = 'pendulum' | 'network' | 'compound';
 export type PendulumMode = 'linear' | 'trig';
 
 /** Physical quantities use SI units; the two named angle inputs use degrees. */
@@ -23,6 +23,25 @@ export interface ParameterLimit {
   min: number;
   max: number;
   step: number;
+}
+
+export interface CompoundStiffness {
+  kTop: number;
+  kBottom: number;
+  kLeft: number;
+  kParallel: number;
+  kEquivalent: number;
+}
+
+export interface CompoundDeformation {
+  /** Downward increments at the nodes below 2*k1, k2, and the upper assembly. */
+  upperJunction: number;
+  lowerJunction: number;
+  collector: number;
+  /** Seven physical springs: [k1-left, k1-right, k2, k3-left, k3-right, k4, k5]. */
+  extensions: number[];
+  /** Signed restoring forces -ki*extension. Only final k5 acts directly on the mass. */
+  forces: number[];
 }
 
 export const DEFAULT_PARAMETERS: Parameters = {
@@ -95,7 +114,7 @@ export interface Snapshot {
   thetaDDot: number;
   /** Net horizontal force m*a in trig pendulum; equivalent restoring force otherwise. */
   force: number;
-  /** Actual horizontal spring force for the pendulum; all branches for network. */
+  /** Actual horizontal pendulum spring force, or total restoring force on the spring-network mass. */
   springForce: number;
   gravityTorque: number;
   springTorque: number;
@@ -110,9 +129,9 @@ export interface Snapshot {
   residual: number;
   /** Network's massless k4/k5 junction displacement, positive downward. */
   seriesJunction: number;
-  /** Signed elongations, relative to static equilibrium, in k1...k5 order. */
+  /** Signed equilibrium-relative elongations: k1...k5 for network, seven physical springs for compound. */
   branchExtensions: number[];
-  /** Restoring forces, in k1...k5 order. k4/k5 report the same series force. */
+  /** Network k4/k5 repeat one series force; compound lists seven springs with only final k5 on the mass. */
   branchForces: number[];
 }
 
@@ -136,13 +155,49 @@ export function sanitizeParameters(input: Partial<Parameters>, mode: PendulumMod
   return result;
 }
 
+/** Reduce (2*k1, k2, 2*k3) in series, parallel k4, then series final k5. */
+export function deriveCompoundStiffness(parameters: Parameters): CompoundStiffness {
+  const p = sanitizeParameters(parameters);
+  const kTop = 2 * p.k1;
+  const kBottom = 2 * p.k3;
+  const kLeft = 1 / (1 / kTop + 1 / p.k2 + 1 / kBottom);
+  const kParallel = kLeft + p.k4;
+  const kEquivalent = (kParallel * p.k5) / (kParallel + p.k5);
+  return { kTop, kBottom, kLeft, kParallel, kEquivalent };
+}
+
+/** All coordinates are downward increments from the loaded static equilibrium. */
+export function compoundDeformation(parameters: Parameters, x: number): CompoundDeformation {
+  const p = sanitizeParameters(parameters);
+  const { kTop, kLeft, kParallel, kEquivalent } = deriveCompoundStiffness(p);
+  const displacement = Number.isFinite(x) ? x : 0;
+  const collector = (kEquivalent * displacement) / kParallel;
+  const leftForce = kLeft * collector;
+  const upperJunction = leftForce / kTop;
+  const lowerJunction = upperJunction + leftForce / p.k2;
+  const extensions = [
+    upperJunction,
+    upperJunction,
+    lowerJunction - upperJunction,
+    collector - lowerJunction,
+    collector - lowerJunction,
+    collector,
+    displacement - collector,
+  ];
+  const stiffnesses = [p.k1, p.k1, p.k2, p.k3, p.k3, p.k4, p.k5];
+  const forces = extensions.map((extension, i) => extension === 0 ? 0 : -stiffnesses[i] * extension);
+  return { upperJunction, lowerJunction, collector, extensions, forces };
+}
+
 function deriveSanitizedModel(problem: ProblemId, p: Parameters): Model {
-  const k45 = (p.k4 * p.k5) / (p.k4 + p.k5);
+  const k45 = problem === 'compound' ? 0 : (p.k4 * p.k5) / (p.k4 + p.k5);
   const isPendulum = problem === 'pendulum';
   const inertia = isPendulum ? p.m * p.l ** 2 : p.m;
   const coordinateStiffness = isPendulum
     ? p.m * p.g * p.l + p.k * p.l ** 2
-    : p.k1 + p.k2 + p.k3 + k45;
+    : problem === 'compound'
+      ? deriveCompoundStiffness(p).kEquivalent
+      : p.k1 + p.k2 + p.k3 + k45;
   const linearStiffness = isPendulum ? p.k + (p.m * p.g) / p.l : coordinateStiffness;
   const omega = Math.sqrt(coordinateStiffness / inertia);
   const initialCoordinate = isPendulum ? p.theta0Deg * DEG_TO_RAD : p.x0;
@@ -202,8 +257,9 @@ export function sampleModel(problem: ProblemId, parameters: Parameters, time: nu
   const force = -model.linearStiffness * x;
   const inertialTerm = model.inertia * qDDot;
   const restoringTerm = model.coordinateStiffness * q;
-  const seriesJunction = isPendulum ? 0 : (p.k4 / (p.k4 + p.k5)) * x;
+  const seriesJunction = problem === 'network' ? (p.k4 / (p.k4 + p.k5)) * x : 0;
   const seriesForce = -model.k45 * x;
+  const compound = problem === 'compound' ? compoundDeformation(p, x) : undefined;
 
   return {
     time: t,
@@ -229,18 +285,22 @@ export function sampleModel(problem: ProblemId, parameters: Parameters, time: nu
     restoringTerm,
     residual: inertialTerm + restoringTerm,
     seriesJunction,
-    branchExtensions: isPendulum ? [x] : [x, x, -x, seriesJunction - x, -seriesJunction],
+    branchExtensions: compound?.extensions
+      ?? (isPendulum ? [x] : [x, x, -x, seriesJunction - x, -seriesJunction]),
     // k4 and k5 are one load path. Do not sum both entries for force on the mass.
-    branchForces: isPendulum
-      ? [-p.k * x]
-      : [-p.k1 * x, -p.k2 * x, -p.k3 * x, seriesForce, seriesForce],
+    branchForces: compound?.forces
+      ?? (isPendulum ? [-p.k * x] : [-p.k1 * x, -p.k2 * x, -p.k3 * x, seriesForce, seriesForce]),
   };
 }
 
 function deriveMasslessModel(problem: ProblemId, p: Parameters): Model {
-  const k45 = (p.k4 * p.k5) / (p.k4 + p.k5);
+  const k45 = problem === 'compound' ? 0 : (p.k4 * p.k5) / (p.k4 + p.k5);
   const isPendulum = problem === 'pendulum';
-  const coordinateStiffness = isPendulum ? p.k * p.l ** 2 : p.k1 + p.k2 + p.k3 + k45;
+  const coordinateStiffness = isPendulum
+    ? p.k * p.l ** 2
+    : problem === 'compound'
+      ? deriveCompoundStiffness(p).kEquivalent
+      : p.k1 + p.k2 + p.k3 + k45;
   // With no mass and no pendulum spring, 0=0 leaves position/evolution undetermined.
   // The view holds the chosen angle, while reporting the indeterminate dynamics.
   const initialCoordinate = isPendulum && p.k === 0 ? p.theta0Deg * DEG_TO_RAD : 0;
@@ -290,8 +350,8 @@ function sampleMasslessModel(problem: ProblemId, p: Parameters, time: number, mo
     restoringTerm: 0,
     residual: 0,
     seriesJunction: 0,
-    branchExtensions: problem === 'pendulum' ? [x] : [0, 0, 0, 0, 0],
-    branchForces: problem === 'pendulum' ? [0] : [0, 0, 0, 0, 0],
+    branchExtensions: problem === 'pendulum' ? [x] : Array(problem === 'compound' ? 7 : 5).fill(0),
+    branchForces: problem === 'pendulum' ? [0] : Array(problem === 'compound' ? 7 : 5).fill(0),
   };
 }
 

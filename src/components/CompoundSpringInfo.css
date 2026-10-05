@@ -1,0 +1,10 @@
+.compound-spring-info__springs{grid-template-columns:repeat(4,minmax(0,1fr))}
+.compound-spring-info__springs .spring-network-info__spring h5{font-size:12px}
+.compound-spring-info__final-spring{border-color:#3c6d59;background:#09100d}
+.compound-spring-info__nodes{border-top:1px solid #292929;border-bottom:1px solid #292929;padding:20px 0 17px;margin:24px 0}
+.compound-spring-info__node-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:center}
+.compound-spring-info__node-layout dl>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:12px 0}
+.compound-spring-info__node-layout dd{flex-shrink:0;margin:0;color:#d9ad87}
+.compound-spring-info__reductions .math-block{font-size:12px}
+@media(max-width:1250px){.compound-spring-info__springs{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){.compound-spring-info__springs{grid-template-columns:repeat(2,minmax(0,1fr))}.compound-spring-info__node-layout{grid-template-columns:minmax(0,1fr);gap:4px}}

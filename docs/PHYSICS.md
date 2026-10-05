@@ -82,6 +82,20 @@ Signed spring elongations in `k1...k5` order are
 
 The top springs lengthen and bottom springs shorten when the mass moves down. The softer series spring deforms more. `branchForces` reports `[-k1*x, -k2*x, -k3*x, -k45*x, -k45*x]`: the last two entries represent the **same series load path**, not two independent forces on the mass. Sum only one of these entries when recovering the total restoring force. All five physical spring energies can be added directly, and equal `½k_eq x²`.
 
+## Compound spring system
+
+The supplied third diagram has seven physical springs and five independent stiffness inputs. Its two identical upper springs form `kTop=2k1`, and its two identical lower springs form `kBottom=2k3`. The entire left path contains these two pairs and the middle spring in series:
+
+`kLeft=1/(1/(2k1)+1/k2+1/(2k3))`.
+
+That path is in parallel with the right spring, `kParallel=kLeft+k4`. The final spring connecting the collector to the mass is in series with that assembly:
+
+`k_eq=kParallel*k5/(kParallel+k5)`.
+
+For displacement `x` positive downward from loaded equilibrium, the collector moves by `z=k_eq*x/kParallel`. The left path's force increment is `FLeft=kLeft*z`. Its upper junction moves by `u=FLeft/(2k1)`, and its lower junction by `v=u+FLeft/k2`. Physical elongations, in the order `[k1-left,k1-right,k2,k3-left,k3-right,k4,k5]`, are `[u,u,v-u,z-v,z-v,z,x-z]`. The massless junctions enforce `2k1*u=k2*(v-u)=2k3*(z-v)` and `FLeft+k4*z=k5*(x-z)`. Only the final k₅ acts directly on the moving mass; internal spring forces must not all be summed as external forces on it.
+
+The equation is `m*xDDot+k_eq*x=0`, with `omega_n=sqrt(k_eq/m)`, `f=omega_n/(2pi)`, and `T=2pi/omega_n`. The seven physical incremental spring energies sum to `½k_eq*x²`. Loaded equilibrium sits `mg/k_eq` below the unloaded mass position. Gravity cancels from the vibration equation after shifting to that equilibrium. Internal junctions and springs are massless; only the attached mass contributes kinetic energy. Equal individual spring stiffnesses `k` produce `kLeft=k/2`, `kParallel=3k/2`, and `k_eq=3k/5`.
+
 ## Exactly zero mass
 
 The mass control includes `m=0`. All acceleration formulas obtained by dividing by mass or inertia, all frequency formulas containing `1/m`, and all dynamic trajectories described above require **positive mass**. Exactly zero inertia turns the undivided equation into a force or torque constraint. It is not an infinitely fast oscillator, and no oscillatory frequency or period is assigned to the static branch.
