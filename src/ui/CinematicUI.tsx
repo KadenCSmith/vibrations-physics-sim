@@ -104,8 +104,8 @@ export function CinematicUIProvider({ children }: { children: ReactNode }) {
     <aside ref={drawer} className={`cinematic-drawer ${panel ? 'is-open' : ''}`} role="dialog" aria-modal={panel ? true : undefined} aria-label={panel === 'finder' ? 'Finder' : 'Toolbox'} aria-hidden={!panel} inert={!panel} data-panel={panel ?? 'closed'}>
       <header className="drawer-heading"><div><span>VIBRATIONS SIMULATION</span><h2>{panel === 'finder' ? 'finder' : 'toolbox'}</h2></div><button aria-label="Close side panel" onClick={() => open(null)}><X size={25} strokeWidth={1} /></button></header>
       <div className="drawer-content" hidden={panel !== 'finder'}>
-        <label className="finder-search"><Search size={18} strokeWidth={1} /><input aria-label="Search Finder" placeholder="Search the simulation" value={query} onChange={event => { setQuery(event.target.value); setFinderTab('guides') }} /><span>↵</span></label>
-        <div className="finder-tabs"><button aria-pressed={finderTab === 'guides'} onClick={() => setFinderTab('guides')}>guides &amp; values</button><button aria-pressed={finderTab === 'docs'} onClick={() => setFinderTab('docs')}>physics documentation</button></div>
+        <label className="finder-search"><Search size={18} strokeWidth={1} /><input aria-label="Search Finder" placeholder={finderTab === 'docs' ? 'Search formulas, steps, or photo numbers' : 'Search guides and physical values'} value={query} onChange={event => setQuery(event.target.value)} /><span>⌕</span></label>
+        <div className="finder-tabs"><button aria-pressed={finderTab === 'guides'} onClick={() => setFinderTab('guides')}>guides &amp; values</button><button aria-pressed={finderTab === 'docs'} onClick={() => setFinderTab('docs')}>formulas &amp; physics</button></div>
         <div hidden={finderTab !== 'guides'}><div ref={guidesRef} /><CurrentValues source={slots.tools} /></div>
         <div hidden={finderTab !== 'docs'} ref={docsRef} />
       </div>

@@ -2,15 +2,22 @@
 
 A browser-first educational simulation of two ENGR 317 exam-review problems: a spring pendulum and a five-spring network. The navigation, Finder, Toolbox, typography, and black canvas follow [Zombie Fire Suppression Sim](https://github.com/KadenCSmith/zombie-fire-suppression-sim).
 
+**[Open the public browser preview](https://kadencsmith.github.io/vibrations-physics-sim/)**
+
 ## Explore
 
-- **Previous sims** switches between the two problems.
+- **Simulation** switches between the two problems.
 - **Toolbox** changes mass, length, spring stiffness, gravity, and initial conditions.
-- Drag the mass to choose a release position; play, pause, change speed, or scrub the graph.
-- The equation of motion substitutes the current position and acceleration live. Motion, Derivation, and Energy explain how the model works.
-- Finder contains guides and the formula reference library, which is being expanded from the supplied lecture notes.
+- Both simulations play automatically at quarter speed. Pause holds the motion until Play is pressed. Switching models, changing values, and opening drawers preserve playback; hidden tabs resume when visible.
+- Drag the mass to choose a release position, change speed, or scrub the graph.
+- The equation of motion labels each fixed input and changing value with its symbol and unit. Motion, Derivation, and Energy explain the model.
+- Finder groups the complete formula library by pendulum, network, shared foundations, and lecture extensions. Search concepts, derivative steps, trig identities, or source photo numbers.
 
-Both models use analytical, undamped free-vibration solutions. The pendulum uses a small-angle approximation. Its drawing uses trigonometric geometry, while its equations use the linear coordinate x = Lθ. The spring network follows the exam scan: k₄ and k₅ form the series branch; k₃ is a direct branch. Default numerical values are illustrative because the diagrams specify symbols rather than numerical data.
+The pendulum defaults to the full equation **−mgL sin θ − kL² sin θ cos θ = J₀ θ̈**, with J₀ = mL² and ideal horizontal spring force. Its geometry, derivatives, energy, and motion use that equation. A small-angle harmonic comparison is selectable in Toolbox. Full-mode release angles range up to ±60°; the linear comparison is limited to ±12°.
+
+The spring network uses an analytical, undamped solution and follows the exam scan: k₄ and k₅ form the series branch; k₃ is a direct branch. Its coordinate is downward displacement from the loaded equilibrium. The differently numbered lecture practice network is separately labeled in Finder. Default numerical values are illustrative because the diagrams specify symbols rather than numerical data.
+
+Mass can be set to exactly 0 kg. This displays the massless equilibrium constraint, without inventing an acceleration or oscillation frequency. With both pendulum mass and spring stiffness zero, the held angle is an illustrative choice and the equation is the identity 0 = 0.
 
 ## Run locally
 
@@ -36,11 +43,12 @@ npm run build
 
 ## Architecture
 
-React and TypeScript provide the application shell. Vite builds the web app. SVG draws the apparatus and response graphs, and KaTeX displays accessible mathematics. The physics model is independent of animation and rendering; playback evaluates the exact analytical solution instead of integrating with frame-dependent steps.
+React and TypeScript provide the application shell. Vite builds the web app. SVG draws the apparatus and response graphs, and KaTeX displays accessible mathematics. Physics is independent of animation and rendering. The network and linear comparison use analytical solutions. The nonlinear pendulum uses an energy-derived period and a cached, fixed-step numerical trajectory. Playback and scrubbing evaluate that reproducible trajectory without frame-dependent integration.
 
 - `src/physics/model.ts`: parameters, analytical solutions, forces, energy, and spring-branch geometry.
 - `src/hooks/useSimulationClock.ts`: playback and seeking.
 - `src/ui/`: navigation, drawers, apparatus, graph, controls, and educational equations.
-- `tests/physics.test.ts`: initial conditions, equations of motion, energy conservation, and spring connectivity.
+- `src/physics/formula*.ts`: searchable equations, explanations, and source provenance.
+- `tests/`: initial conditions, torque/force balances, energy conservation, true nonlinear period, repeatable scrubbing, spring connectivity, formula rendering, and reference coverage.
 
-See [physics assumptions](docs/PHYSICS.md) and [teaching notes](docs/TEACHING.md). Original scans and lecture photographs are reference material and are not distributed in this repository. The UI shell is adapted from the user's existing fire simulation; no new software license has been assigned.
+See [physics assumptions](docs/PHYSICS.md), [teaching notes](docs/TEACHING.md), and the [38-photo reference inventory](docs/SOURCE_REFERENCES.md). Original scans and lecture photographs are reference material and are not distributed in this repository. The UI shell is adapted from the user's existing fire simulation; no new software license has been assigned.

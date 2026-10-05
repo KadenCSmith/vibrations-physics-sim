@@ -1,9 +1,9 @@
-import { useState, type PointerEvent } from 'react'
-import { sampleModel, type Model, type Parameters, type ProblemId, type Snapshot } from '../physics/model'
+import { useMemo, useState, type PointerEvent } from 'react'
+import { sampleModel, type Model, type Parameters, type ProblemId, type Snapshot, type PendulumMode } from '../physics/model'
 
 type Kind = 'x' | 'v' | 'a' | 'phase'
 const COLORS = {x:'#e8b18a',v:'#a8bfff',a:'#6ee7c9',phase:'#c1a8f0'}
-export default function ResponseChart({ problem, parameters, model, snapshot, duration, onSeek }: {problem:ProblemId;parameters:Parameters;model:Model;snapshot:Snapshot;duration:number;onSeek:(time:number)=>void}) {
+export default function ResponseChart({ problem, parameters, model, snapshot, duration, mode='linear', onSeek }: {problem:ProblemId;parameters:Parameters;model:Model;snapshot:Snapshot;duration:number;mode?:PendulumMode;onSeek:(time:number)=>void}) {
   const [kind,setKind] = useState<Kind>('x')
   const [scrubbing,setScrubbing] = useState(false)
   const W=760,H=187,left=54,right=738,top=18,bottom=155
@@ -13,7 +13,13 @@ export default function ResponseChart({ problem, parameters, model, snapshot, du
   const x = (time:number) => left+(right-left)*time/duration
   const phaseX = (value:number) => (left+right)/2+value/(amplitude*1.2)*(right-left)/2
   const value = (s:Snapshot) => kind === 'x' ? s.x : kind === 'v' || kind === 'phase' ? s.v : s.a
-  const points = Array.from({length:401},(_,i) => {const t=duration*i/400,s=sampleModel(problem,parameters,t);return `${i?'L':'M'}${(kind==='phase'?phaseX(s.x):x(t)).toFixed(2)},${y(value(s)).toFixed(2)}`}).join(' ')
+  const points = useMemo(() => Array.from({length:401},(_,i) => {
+    const t=duration*i/400,s=sampleModel(problem,parameters,t,mode)
+    const plotX=kind==='phase'?(left+right)/2+s.x/(amplitude*1.2)*(right-left)/2:left+(right-left)*t/duration
+    const plotValue=kind==='x'?s.x:kind==='v'||kind==='phase'?s.v:s.a
+    const plotY=(top+bottom)/2-plotValue/maxY*(bottom-top)/2
+    return `${i?'L':'M'}${plotX.toFixed(2)},${plotY.toFixed(2)}`
+  }).join(' '),[problem,parameters,duration,mode,kind,amplitude,maxY,left,right,top,bottom])
   const units=kind==='x'?'m':kind==='a'?'m/s²':'m/s'
   const seek=(event:PointerEvent<SVGSVGElement>) => {
     if(kind==='phase')return
@@ -34,6 +40,6 @@ export default function ResponseChart({ problem, parameters, model, snapshot, du
       {kind!=='phase'&&<line x1={x(snapshot.time)} x2={x(snapshot.time)} y1={top} y2={bottom} stroke="#ddd" strokeWidth="1" opacity=".5"/>}
       <circle cx={kind==='phase'?phaseX(snapshot.x):x(snapshot.time)} cy={y(value(snapshot))} r="4.5" fill={COLORS[kind]}/>
     </svg>
-    <p>{kind==='phase'?'A closed ellipse: total energy stays constant.':'Click the graph to pause at any instant. One vertical line links the scene and equation.'}</p>
+    <p>{kind==='phase'?'A closed orbit: total energy stays constant.':'Click or drag to seek through time. Use Pause to hold an instant; the cursor links the scene and equation.'}</p>
   </section>
 }

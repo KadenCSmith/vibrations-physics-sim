@@ -11,11 +11,12 @@ const problems: { id: Problem; title: string; detail: string }[] = [
   { id: 'network', title: 'Spring network', detail: 'Parallel paths and a series branch · vertical translation' },
 ]
 const guides = [
-  { title: 'Choose a problem', text: 'Open Simulation Version or previous sims to switch between the spring pendulum and the five-spring network. Each model has its own equations and controls.' },
-  { title: 'Release, pause, and inspect', text: 'Drag the mass to choose a release position. Use the bottom playback controls to run, pause, rewind, or inspect a particular time. Playback speed changes how quickly you view the motion.' },
+  { title: 'Choose a problem', text: 'Open the Simulation dropdown to switch between the spring pendulum and the five-spring network. Each model has its own equations and controls.' },
+  { title: 'Release, pause, and inspect', text: 'Both simulations play automatically at quarter speed. Drag the mass to change the release position, then release it to continue. Use Pause to hold an instant; Play resumes. Switching problems and opening Toolbox or Finder preserve playback. Hidden tabs resume when visible unless you paused.' },
   { title: 'Change a physical parameter', text: 'Toolbox contains masses, lengths, and spring stiffnesses. A parameter change starts a new trajectory from its initial condition. The values use the units shown beside each control.' },
-  { title: 'Understand the model', text: 'These models describe small, undamped, linear vibrations. The pendulum uses the small-angle spring extension x = Lθ. Its drawing follows the pendulum geometry while its physical response follows the linear model.' },
-  { title: 'Read the response', text: 'Natural angular frequency is measured in radians per second. Divide by 2π for cycles per second. Camera position, labels, graph scale, and playback rate do not change the physical frequency.' },
+  { title: 'Understand the model', text: 'The pendulum defaults to the full sin θ / cos θ torque equation with ideal horizontal spring force. Toolbox offers a small-angle linear comparison. The spring network is linear, with k₄ and k₅ in series. Both models are undamped; their energy stays constant.' },
+  { title: 'Read the response', text: 'Angular frequency is measured in radians per second; frequency in cycles per second. The full pendulum period depends on release angle. The network and linear pendulum comparison have amplitude-independent frequency. Playback speed changes viewing speed without changing physical time or the equations.' },
+  { title: 'Find every formula', text: 'Physics documentation groups equations by spring pendulum, spring network, shared foundations, and lecture extensions. Expand a topic for its formulas, intermediate derivatives, usage, source photos, and corrections. Search within formulas to find a concept or photo number.' },
 ]
 
 function Pinwheel() {
@@ -65,13 +66,8 @@ export function AppChrome({ problem, onProblem, onResetView }: {
     <header className={`cinematic-header ${compact ? 'is-compact' : ''}`}>
       <button className="cinematic-brand" onClick={render} aria-label="Vibrations Simulation home">Vibrations<span>Ver.[{version}]</span></button>
       <div className="version-navigation" ref={menuRef}>
-        <button ref={switcherRef} className="cinematic-nav-button" aria-label="Simulation Version" aria-expanded={menu} aria-controls="simulation-version-menu" onClick={switcher}><Pinwheel /><span>Simulation Version</span></button>
-        <nav className="cinematic-sublinks" aria-label="Simulation modes">
-          <button onClick={render}>render</button>
-          <button onClick={() => finder('docs')}>live physics</button>
-          <button aria-expanded={menu} aria-controls="simulation-version-menu" onClick={switcher}>previous sims</button>
-        </nav>
-        {menu && <div id="simulation-version-menu" className="version-menu" role="dialog" aria-label="Select a simulation"><span className="drawer-section-label">SIMULATION VERSION</span>{problems.map((item, index) => <button key={item.id} aria-current={problem === item.id ? 'page' : undefined} onClick={() => select(item.id)}><small>{String(index + 1).padStart(2, '0')}</small><span>{item.title}<em>{item.detail}</em></span><b>↗</b></button>)}</div>}
+        <button ref={switcherRef} className="cinematic-nav-button" aria-label="Simulation" aria-expanded={menu} aria-controls="simulation-version-menu" onClick={switcher}><Pinwheel /><span>Simulation</span></button>
+        {menu && <div id="simulation-version-menu" className="version-menu" role="dialog" aria-label="Select a simulation"><span className="drawer-section-label">CHOOSE A SIMULATION</span>{problems.map((item, index) => <button key={item.id} aria-current={problem === item.id ? 'page' : undefined} onClick={() => select(item.id)}><small>{String(index + 1).padStart(2, '0')}</small><span>{item.title}<em>{item.detail}</em></span><b>↗</b></button>)}</div>}
       </div>
       <div className="finder-navigation">
         <button className="cinematic-nav-button" aria-label="Open Finder" aria-expanded={panel === 'finder'} onClick={() => { setMenu(false); open(panel === 'finder' ? null : 'finder') }}><FinderIcon /><span>finder</span></button>
@@ -80,7 +76,7 @@ export function AppChrome({ problem, onProblem, onResetView }: {
       <button className="toolbox-navigation" aria-label="Open Toolbox" aria-expanded={panel === 'toolbox'} title="Edit simulation variables" onClick={() => { setMenu(false); open(panel === 'toolbox' ? null : 'toolbox') }}><ToolboxIcon /><span>toolbox</span></button>
     </header>
     <FinderPortal>
-      <section className="finder-destinations"><div className="drawer-section-label">JUMP TO</div>{results.map((item) => <button key={item.id} onClick={() => select(item.id)}><span>{item.title}<small>{item.detail}</small></span><b>↗</b></button>)}</section>
+      <section className="finder-destinations"><div className="drawer-section-label">JUMP TO</div>{results.map((item) => <button key={item.id} onClick={() => select(item.id)}><span>{item.title}<small>{item.detail}</small></span><b>↗</b></button>)}<button onClick={() => finder('docs')}><span>Formula library<small>Equations, trig identities, derivative steps, and sources</small></span><b>↗</b></button></section>
       <section className="finder-handbook"><div className="drawer-section-label">GUIDES</div>{guides.filter(item => `${item.title} ${item.text}`.toLowerCase().includes(query.toLowerCase())).map(item => <details key={item.title}><summary>{item.title}</summary><p>{item.text}</p></details>)}</section>
     </FinderPortal>
   </>
