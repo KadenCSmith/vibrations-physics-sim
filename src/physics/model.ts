@@ -118,7 +118,10 @@ export interface Snapshot {
 
 const DEG_TO_RAD = Math.PI / 180;
 
-/** Missing/nonfinite entries use defaults. Values are clamped, never rounded. */
+/**
+ * Missing/nonfinite entries use defaults. Values are clamped, never rounded.
+ * Exactly zero mass is supported; positive mass starts at the slider's 0.1 kg step.
+ */
 export function sanitizeParameters(input: Partial<Parameters>, mode: PendulumMode = 'linear'): Parameters {
   const result = { ...DEFAULT_PARAMETERS };
   for (const key of Object.keys(PARAMETER_LIMITS) as (keyof Parameters)[]) {
@@ -127,7 +130,8 @@ export function sanitizeParameters(input: Partial<Parameters>, mode: PendulumMod
     const { min, max } = key === 'theta0Deg' && mode === 'linear'
       ? { min: -12, max: 12 }
       : PARAMETER_LIMITS[key];
-    result[key] = Math.min(max, Math.max(min, value));
+    const supportedMin = key === 'm' && value > 0 ? PARAMETER_LIMITS.m.step : min;
+    result[key] = Math.min(max, Math.max(supportedMin, value));
   }
   return result;
 }

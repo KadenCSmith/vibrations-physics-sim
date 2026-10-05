@@ -9,10 +9,11 @@ import VibrationScene from './ui/VibrationScene'
 import ResponseChart from './ui/ResponseChart'
 import EquationPanel from './ui/EquationPanel'
 import { FormulaLibrary } from './ui/FormulaLibrary'
+import { SpringNetworkInfo } from './components/SpringNetworkInfo'
 
 const STORAGE_KEY = 'vibrations-sim-v1-parameters'
 const definitions: Record<keyof Parameters, Omit<ControlDefinition, 'key'|'min'|'max'|'step'>> = {
-  m:{label:'Mass',symbol:'m',unit:'kg',note:'The concentrated moving mass; the rod and spring masses are neglected.'},
+  m:{label:'Mass',symbol:'m',unit:'kg',note:'The concentrated moving mass; the rod and spring masses are neglected. Choose 0 for the massless constraint, or at least 0.1 kg for motion.'},
   l:{label:'Rod length',symbol:'L',unit:'m',note:'The spring attaches at the bob, a full rod length from the hinge.'},
   k:{label:'Spring stiffness',symbol:'k',unit:'N/m',note:'Set k to zero to recover the simple pendulum.'},
   g:{label:'Gravity',symbol:'g',unit:'m/s²',note:'Earth: 9.81. Moon: 1.62. Gravity supplies a restoring torque.'},
@@ -97,6 +98,7 @@ function SimulationWorkspace() {
             <div className="acceleration-readout"><span>acceleration a</span><output data-testid="acceleration">{model.massless?'—':number(snapshot.a)}<small> m/s²</small></output></div>
             <div><span>{problem==='pendulum'&&mode==='trig'?'oscillation frequency':'natural frequency'}</span><output data-testid="frequency">{model.massless?'—':number(model.frequency,2)}<small>{model.massless?' massless':' Hz'}</small></output></div>
           </div>
+          {problem==='network'&&<SpringNetworkInfo parameters={parameters} model={model} snapshot={snapshot}/>}
           {model.massless?<p className="massless-note">At 0 kg there is no inertial oscillation. The apparatus shows the equilibrium constraint; acceleration and frequency are not defined.</p>:<ResponseChart problem={problem} parameters={parameters} model={model} snapshot={snapshot} mode={mode} duration={duration} onSeek={seek}/>}
           <section className="lesson-prompt"><span className="eyebrow">TRY A SMALL EXPERIMENT</span><p>{problem==='pendulum'?'Double the mass. Does the whole frequency halve? Watch the gravity term and the spring term separately.':'Make k₄ much softer than k₅. Watch the junction, then compare the deformation of the two springs.'}</p><button onClick={()=>ui.open('toolbox')}>try it in toolbox <ArrowUpRight size={14}/></button></section>
         </div>
@@ -118,8 +120,8 @@ function SimulationWorkspace() {
     </FinderPortal>
     <div className="cinematic-transport" aria-label="Simulation playback">
       <button className="transport-play" aria-label={clock.playing?'Pause simulation':'Play simulation'} onClick={()=>clock.setPlaying(v=>!v)}>{clock.playing?<Pause size={21} strokeWidth={1.2}/>:<Play size={21} strokeWidth={1.2}/>}</button>
-      <button aria-label="Back one quarter period" onClick={()=>seek(Math.max(0,clock.time-model.period/4))}><SkipBack size={18} strokeWidth={1}/></button>
-      <div className="cinematic-timeline"><div><span>{problem==='pendulum'?'θ(t) → x(t)':'x(t) → spring deformation'}</span><strong><output data-testid="time">{clock.time.toFixed(2)}</output> <small>/ {duration.toFixed(2)} s · 4 cycles</small></strong></div><input aria-label="Simulation time" type="range" min="0" max={duration} step={duration/1000} value={clock.time} onChange={event=>seek(Number(event.target.value))}/></div>
+      <button aria-label="Back one quarter period" disabled={model.massless} onClick={()=>seek(Math.max(0,clock.time-model.period/4))}><SkipBack size={18} strokeWidth={1}/></button>
+      <div className="cinematic-timeline"><div><span>{model.massless?'massless · static view':problem==='pendulum'?'θ(t) → x(t)':'x(t) → spring deformation'}</span><strong>{model.massless?<small>No oscillation period</small>:<><output data-testid="time">{clock.time.toFixed(2)}</output> <small>/ {duration.toFixed(2)} s · 4 cycles</small></>}</strong></div><input aria-label="Simulation time" disabled={model.massless} type="range" min="0" max={duration} step={duration/1000} value={clock.time} onChange={event=>seek(Number(event.target.value))}/></div>
       <label className="speed-control">speed<select aria-label="Playback speed" value={clock.speed} onChange={event=>clock.setSpeed(Number(event.target.value))}>{[.1,.25,.5,1,1.5,2].map(value=><option key={value} value={value}>{value}×</option>)}</select></label>
       <button aria-label="Restart simulation" onClick={clock.reset}><RotateCcw size={18} strokeWidth={1}/></button>
       <button aria-label="Open physical values" onClick={()=>ui.open('toolbox')}><SlidersHorizontal size={20} strokeWidth={1}/></button>

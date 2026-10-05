@@ -1,0 +1,49 @@
+.spring-network-info{margin:10px 0 30px;border-top:1px solid #292929;border-bottom:1px solid #292929;color:#b9b9b9}
+.spring-network-info>summary{display:flex;align-items:center;justify-content:space-between;list-style:none;padding:16px 0;cursor:pointer;font-size:12px;color:#aaa}
+.spring-network-info>summary::-webkit-details-marker{display:none}
+.spring-network-info>summary::after{content:'';display:block;width:7px;height:7px;border-right:1px solid #777;border-bottom:1px solid #777;transform:rotate(45deg);transition:transform .2s;margin-right:3px}
+.spring-network-info[open]>summary::after{transform:rotate(225deg)}
+.spring-network-info>summary:hover{color:#eee}.spring-network-info>summary:focus-visible{outline:1px solid #aaa;outline-offset:4px}
+.spring-network-info__content{padding:9px 0 26px;min-width:0}
+.spring-network-info__heading h3{font-size:23px;letter-spacing:-.025em;font-weight:300;line-height:1.3;margin:9px 0 12px}
+.spring-network-info p{font-size:11px;font-weight:400;line-height:1.8;color:#858585;margin:9px 0 15px}
+.spring-network-info h4{font:10px ui-monospace,monospace;line-height:1.6;font-weight:400;color:#bdbdbd;margin:0 0 14px}
+.spring-network-info__overview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;margin:23px 0 26px}
+.spring-network-info__overview>section{border:1px solid #292929;padding:19px 17px;min-width:0;background:#070707}
+.spring-network-info__map{display:block;width:100%;height:auto;overflow:visible;margin:12px 0 9px}
+.spring-network-info__map-rails,.spring-network-info__map-series{fill:none;stroke:#999;stroke-width:1.2}
+.spring-network-info__map-series{stroke:#d9ad87}.spring-network-info__map-series circle{fill:#d9ad87}
+.spring-network-info__map-labels{fill:#bcbcbc;font:11px ui-monospace,monospace}
+.spring-network-info__map-labels text:last-child{fill:#a28b7a;font-size:9px}
+.spring-network-info p.spring-network-info__caption{font-size:9px;color:#666;line-height:1.6}
+.spring-network-info__reduction h4:not(:first-child){border-top:1px solid #282828;padding-top:18px;margin-top:18px}
+.spring-network-info .math-block{font-size:13px}.spring-network-info .spring-network-info__substitution{font-size:12px;color:#d9ad87}
+.spring-network-info__section-heading{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.spring-network-info__section-heading>span{font:10px ui-monospace,monospace;color:#777}
+.spring-network-info__springs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin:18px 0 12px}
+.spring-network-info__spring{border:1px solid #2b2b2b;padding:14px 10px;min-width:0;background:#090909}
+.spring-network-info__spring--series{border-top-color:#ad886b}
+.spring-network-info__spring header{display:flex;justify-content:space-between;align-items:center;gap:5px}
+.spring-network-info__spring h5{font:17px ui-monospace,monospace;font-weight:400;color:#ccc;margin:0}
+.spring-network-info__spring header>span{font:7px ui-monospace,monospace;letter-spacing:.02em;color:#777}
+.spring-network-info p.spring-network-info__stiffness{font:10px ui-monospace,monospace;color:#aaa;margin:18px 0 6px}
+.spring-network-info__stiffness strong{font-size:19px;font-weight:400;color:#ddd}
+.spring-network-info p.spring-network-info__path{font-size:9px;line-height:1.5;min-height:28px;margin:9px 0 14px}
+.spring-network-info dl{margin:0}
+.spring-network-info__spring dl>div{border-top:1px solid #242424;padding-top:11px;margin-top:10px}
+.spring-network-info dt{font-size:9px;line-height:1.5;color:#777}
+.spring-network-info dd{margin:6px 0 0;font:11px ui-monospace,monospace;color:#a8cabc;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.spring-network-info dd small{font-size:9px;color:#777}
+.spring-network-info__spring dl>div:first-child dd{color:#d9ad87}
+.spring-network-info p.spring-network-info__series-note{border-left:1px solid #a68064;padding-left:12px;color:#9e9085;font-size:10px}
+.spring-network-info__force{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;border-top:1px solid #2b2b2b;padding-top:24px;margin-top:25px}
+.spring-network-info__force-values{padding:16px;background:#09100d;border:1px solid #25352e;min-width:0}
+.spring-network-info__force-values dl>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:11px}
+.spring-network-info__force-values dt{font-size:10px}.spring-network-info__force-values dd{flex-shrink:0;margin-top:0}
+.spring-network-info__force-values dl>div:first-child dd{color:#d9ad87}
+.spring-network-info__force-total{border-top:1px solid #344b3d;padding-top:13px;margin-top:15px}
+.spring-network-info__force-total dt,.spring-network-info__force-total dd{color:#bedbcb}
+.spring-network-info__force-values p{font-size:9px;margin:13px 0 0}
+@media(max-width:1250px){.spring-network-info__springs{grid-template-columns:repeat(3,minmax(0,1fr))}.spring-network-info__overview{gap:12px}.spring-network-info__overview>section{padding:16px 12px}}
+@media(max-width:650px){.spring-network-info__overview,.spring-network-info__force{grid-template-columns:minmax(0,1fr)}.spring-network-info__springs{grid-template-columns:repeat(2,minmax(0,1fr))}.spring-network-info__spring:last-child{grid-column:auto}.spring-network-info__heading h3{font-size:20px}.spring-network-info__force{gap:10px}.spring-network-info__map{max-width:430px;margin-left:auto;margin-right:auto}}
+@media(prefers-reduced-motion:reduce){.spring-network-info>summary::after{transition:none}}

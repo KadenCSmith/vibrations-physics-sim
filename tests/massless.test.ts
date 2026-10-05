@@ -15,7 +15,52 @@ describe('zero-mass static constraints', () => {
     expect(PARAMETER_LIMITS.m.min).toBe(0);
     expect(sanitizeParameters({ m: 0 }).m).toBe(0);
     expect(sanitizeParameters({ m: -2 }).m).toBe(0);
-    expect(sanitizeParameters({ m: 0.01 }).m).toBe(0.01);
+    expect(sanitizeParameters({ m: -Number.MIN_VALUE }).m).toBe(0);
+  });
+
+  it.each([Number.MIN_VALUE, 1e-320, 1e-308, 1e-100, 0.000001, 0.01, 0.0999])(
+    'normalizes unsupported positive mass %s to the first slider step', (mass) => {
+      expect(sanitizeParameters({ m: mass }).m).toBe(0.1);
+      expect(sanitizeParameters({ m: mass }, 'trig').m).toBe(0.1);
+    },
+  );
+
+  it('preserves supported positive values and rejects nonfinite mass input', () => {
+    expect(sanitizeParameters({ m: 0.1 }).m).toBe(0.1);
+    expect(sanitizeParameters({ m: 0.2 }).m).toBe(0.2);
+    expect(sanitizeParameters({ m: 0.123456 }).m).toBe(0.123456);
+    expect(sanitizeParameters({ m: NaN }).m).toBe(DEFAULT_PARAMETERS.m);
+    expect(sanitizeParameters({ m: Infinity }).m).toBe(DEFAULT_PARAMETERS.m);
+  });
+
+  it.each<ProblemId>(['pendulum', 'network'])(
+    'evaluates tiny-positive input safely for %s at nonzero scrub times', (problem) => {
+      for (const mode of ['linear', 'trig'] as PendulumMode[]) {
+        const tiny = parameters({ m: 1e-320 });
+        const supported = parameters({ m: 0.1 });
+        const model = deriveModel(problem, tiny, mode);
+        expect(model.massless).toBe(false);
+        expect(model.inertia).toBeGreaterThan(0);
+        expect(model.period).toBeGreaterThan(0);
+        expectFiniteFields(model);
+        for (const time of [0, 0.43, 1000 * model.period + 0.17]) {
+          const s = sampleModel(problem, tiny, time, mode);
+          expectFiniteFields(s);
+          expect(s).toEqual(sampleModel(problem, supported, time, mode));
+        }
+      }
+    },
+  );
+
+  it('restores a finite positive-mass trajectory after zero and tiny-input edits', () => {
+    const dynamic = parameters({ m: 0.2, theta0Deg: 40 });
+    const before = sampleModel('pendulum', dynamic, 0.47, 'trig');
+    expect(deriveModel('pendulum', { ...dynamic, m: 0 }, 'trig').massless).toBe(true);
+    const tiny = sampleModel('pendulum', { ...dynamic, m: Number.MIN_VALUE }, 0.47, 'trig');
+    expectFiniteFields(tiny);
+    const restored = sampleModel('pendulum', dynamic, 0.47, 'trig');
+    expect(restored).toEqual(before);
+    expect(deriveModel('pendulum', dynamic, 'trig').massless).toBe(false);
   });
 
   it.each<PendulumMode>(['linear', 'trig'])('constrains the spring pendulum to equilibrium in %s mode', (mode) => {

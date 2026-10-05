@@ -84,7 +84,7 @@ export default function VibrationScene({ problem, parameters: p, model, snapshot
           {Math.abs(s.springForce)>.001&&<ForceArrow start={[bob[0],bob[1]-38]} end={[bob[0]+Math.max(-90,Math.min(90,s.springForce*12)),bob[1]-38]} color="#e8b18a" label={`Fₛ = ${signed(s.springForce,2)} N`} labelAt={[bob[0]-40,bob[1]-52]}/>}
           <text x="26" y="68" fill="#6ee7c9" fontSize="11">τg = {signed(s.gravityTorque,2)} N·m</text>
           <text x="26" y="87" fill="#e8b18a" fontSize="11">τs = {signed(s.springTorque,2)} N·m</text>
-          <text x="26" y="108" className="svg-muted">Στ = J₀ θ̈ = {signed(s.inertialTerm,2)} N·m</text>
+          <text x="26" y="108" className="svg-muted">{model.massless?'Στ = 0 · no inertia':`Στ = J₀ θ̈ = ${signed(s.inertialTerm,2)} N·m`}</text>
         </>:Math.abs(s.x)>.0004&&<ForceArrow start={[bob[0], bob[1] + 39]} end={[bob[0] + Math.max(-98, Math.min(98, s.force * 12)), bob[1] + 39]} color="#6ee7c9" label={`Fₓ = ${signed(s.force, 2)} N`} labelAt={[bob[0] - 44, bob[1] + 62]}/>)}
         <line x1="215" y1="384" x2="665" y2="384" stroke="#555"/>
         <line x1="440" y1="376" x2="440" y2="393" stroke="#888"/>
