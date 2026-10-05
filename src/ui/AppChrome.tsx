@@ -7,7 +7,7 @@ import './cinematic.css'
 
 type Problem = 'pendulum' | 'network'
 const problems: { id: Problem; title: string; detail: string }[] = [
-  { id: 'pendulum', title: 'Spring pendulum', detail: 'Gravity and a horizontal spring · small-angle rotation' },
+  { id: 'pendulum', title: 'Spring pendulum', detail: 'Gravity and a horizontal spring · angular motion' },
   { id: 'network', title: 'Spring network', detail: 'Parallel paths and a series branch · vertical translation' },
 ]
 const guides = [

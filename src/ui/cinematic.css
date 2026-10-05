@@ -11,6 +11,7 @@ body.cinematic-ui{overflow-x:clip}
 .cinematic-brand>span{display:block;margin-top:4px}
 .cinematic-nav-button{display:flex;align-items:flex-start;gap:13px;white-space:nowrap;width:100%}
 .cinematic-nav-button>span{font-size:clamp(23px,2vw,42px);letter-spacing:-.045em;line-height:1.12}
+.version-navigation>.cinematic-nav-button>span{font-size:clamp(28px,2.5vw,54px)}
 .cinematic-nav-button svg,.toolbox-navigation svg{fill:none;stroke:currentColor;stroke-width:1;overflow:visible;flex-shrink:0}
 .version-navigation{position:relative}
 .version-pinwheel{width:49px;height:107px}
@@ -27,6 +28,7 @@ body.cinematic-ui{overflow-x:clip}
 .cinematic-header.is-compact{height:88px;padding-top:17px;background:linear-gradient(#000 88%,#0000)}
 .is-compact .cinematic-brand{font-size:22px}
 .is-compact .cinematic-nav-button>span{font-size:24px}
+.is-compact .version-navigation>.cinematic-nav-button>span{font-size:30px}
 .is-compact .version-pinwheel{height:52px;width:29px}
 .is-compact .cinematic-sublinks{display:none}
 .is-compact .finder-navigation>.cinematic-nav-button svg{height:49px;width:49px}
@@ -83,4 +85,7 @@ body.cinematic-ui{overflow-x:clip}
 @media(max-width:1150px){.cinematic-header,.cinematic-header.is-compact{padding-left:3vw;padding-right:3vw;grid-template-columns:22vw 35vw 25vw minmax(0,12vw)}.cinematic-brand{font-size:24px}.cinematic-nav-button>span{font-size:24px}.version-pinwheel{width:36px;height:93px}.cinematic-sublinks{margin-left:49px;margin-top:-60px;font-size:12px}.finder-navigation>.cinematic-nav-button svg{width:70px;height:80px}.finder-navigation .cinematic-sublinks{margin-left:82px;margin-top:-49px;font-size:10px}.toolbox-navigation svg{width:115px;height:80px}.cinematic-drawer{width:38vw}}
 @media(max-width:760px){.cinematic-header,.cinematic-header.is-compact{height:102px;grid-template-columns:minmax(0,1.2fr) minmax(0,1.45fr) 37px 55px;gap:12px;padding:20px 18px}.cinematic-brand,.is-compact .cinematic-brand{font-size:19px}.cinematic-nav-button>span,.is-compact .cinematic-nav-button>span{font-size:18px;white-space:normal}.version-pinwheel,.is-compact .version-pinwheel{height:44px;width:25px}.cinematic-nav-button{gap:7px}.cinematic-sublinks{display:none}.finder-navigation>.cinematic-nav-button svg,.is-compact .finder-navigation>.cinematic-nav-button svg{width:37px;height:37px}.finder-navigation .cinematic-nav-button>span{display:none}.toolbox-navigation svg,.is-compact .toolbox-navigation svg{height:37px;width:55px}.cinematic-drawer{width:min(100vw,460px);min-width:0}.drawer-heading,.drawer-content{padding-left:22px;padding-right:22px}.version-menu,.is-compact .version-menu{position:fixed;top:85px;left:18px;width:calc(100vw - 36px)}}
 @media(max-width:400px){.cinematic-header,.cinematic-header.is-compact{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) 30px 42px;gap:9px;padding-left:14px;padding-right:14px}.cinematic-brand,.is-compact .cinematic-brand{font-size:17px}.cinematic-nav-button>span,.is-compact .cinematic-nav-button>span{font-size:16px}.version-pinwheel,.is-compact .version-pinwheel{width:20px}.finder-navigation>.cinematic-nav-button svg,.is-compact .finder-navigation>.cinematic-nav-button svg{width:30px}.toolbox-navigation svg,.is-compact .toolbox-navigation svg{width:42px}}
+@media(max-width:1150px){.version-navigation>.cinematic-nav-button>span,.is-compact .version-navigation>.cinematic-nav-button>span{font-size:30px}}
+@media(max-width:760px){.version-navigation>.cinematic-nav-button>span,.is-compact .version-navigation>.cinematic-nav-button>span{font-size:21px}}
+@media(max-width:400px){.version-navigation>.cinematic-nav-button>span,.is-compact .version-navigation>.cinematic-nav-button>span{font-size:18px}}
 @media(prefers-reduced-motion:reduce){.cinematic-drawer,.cinematic-header{transition:none}.pinwheel-rotor{animation:none}}

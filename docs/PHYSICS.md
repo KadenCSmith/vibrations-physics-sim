@@ -34,7 +34,7 @@ The trigonometric snapshot reports the true horizontal coordinate and its chain-
 
 `springForce=-k x` is the horizontal force from the spring. `force=m a` is the **net horizontal force**, including the rigid rod's constraint reaction. The generalized tangential force `(gravityTorque+springTorque)/l` is a different quantity. `inertialTerm=m l² thetaDDot` and `restoringTerm=mgl sin(theta)+k l² sin(theta)cos(theta)` balance to floating-point precision.
 
-The initial angle can reach ±60 degrees in trig mode. The interface releases from rest, so these cases remain oscillations around downward equilibrium. The API still honors a requested nonzero angular rate and determines the turning amplitude from total energy.
+The initial angle can reach ±60 degrees in trig mode. The interface releases from rest, so positive-mass cases remain oscillations around downward equilibrium. The API still honors a requested nonzero angular rate and determines the turning amplitude from total energy.
 
 `Model.omega=sqrt(g/l+k/m)` remains the **small-angle natural-frequency reference**. `Model.period` and `Model.frequency=1/period` report the actual finite-amplitude cycle. The angular cycle frequency is `2pi/Model.period`; it generally differs from `Model.omega` at a finite angle. Changing amplitude can therefore change the true period even though the small-angle reference is unchanged.
 
@@ -90,6 +90,10 @@ For the network, `k_eq x=0` and `k_eq>0`, so the massless state is `x=0`. For th
 
 For the pendulum with both `m=0` and `k=0`, the equation becomes `0=0`. It cannot determine acceleration or a unique motion. The view holds the selected angle illustratively with no oscillation. The familiar gravity-only pendulum equation survives the limit `m→0+` after canceling a **nonzero** mass; that cancellation cannot be used at `m=0`.
 
+The engine handles zero mass before any frequency calculation, inertia division, or trigonometric trajectory construction. Every `Model` contains a `massless` flag. All zero-mass snapshots report zero forces, torques, energies, and EOM residual. Their inertias and oscillation amplitudes are zero. In the wholly degenerate pendulum, x follows the held angle using `l theta` in linear mode or `l sin(theta)` in trig mode. Snapshot rates and accelerations are numeric zero placeholders for rendering; the interface identifies the undetermined dynamics.
+
+`Model.omega`, `frequency`, and `period` use numeric zero sentinels for no defined oscillation rhythm, displayed as unavailable by the interface. These are not the positive-mass frequency limit. The clock uses a safe display duration and does not divide by the zero period or animate inertial motion.
+
 ## Analytical trajectory and interface
 
 For generalized inertia `M`, stiffness `K`, coordinate `q`, and `omega=sqrt(K/M)`, the engine evaluates
@@ -105,15 +109,5 @@ Its amplitude is `hypot(q0,qDot0/omega)`. `q=theta` for the pendulum and `q=x` f
 `sanitizeParameters(input, mode='linear')` returns a fresh complete object, substitutes defaults for missing or nonfinite entries, and clamps finite values to safe ranges without rounding. Its default preserves the ±12-degree linear limit; passing `'trig'` permits ±60 degrees. `deriveModel(problem,parameters,mode='linear')` and `sampleModel(problem,parameters,time,mode='linear')` preserve the earlier API defaults and sanitize at the same mode boundary. The network ignores the pendulum mode. The model never mutates supplied parameters. Invalid time values fall back to the initial state. The clock, graph scales, camera, playback speed, and labels are display state rather than physical parameters.
 
 Tests verify initial conditions, periodicity, energy conservation, finite-difference derivatives, Newton/Lagrange residuals, the pure-pendulum limit, inertia and mass scaling, correct network connectivity, junction force balance, and equality of physical-branch and equivalent-spring energies. Additional trig tests check exact torque and potential, complete versus horizontal kinetic energy, period against an independent arithmetic–geometric-mean result for the simple pendulum, quarter-cycle turning points, finite-amplitude period changes, the small-angle limit, sign symmetry, reproducible cache replacement, long scrubs, and high-energy rotation detection.
-
-## Zero-mass static constraints
-
-The mass input accepts exactly 0 kg. The engine handles this case **before** any frequency calculation, inertia division, or trigonometric trajectory construction. Every `Model` contains a `massless` flag; it is false for positive mass and true at zero mass.
-
-At zero mass, Newton's law becomes a static force or torque constraint instead of an equation that determines inertial evolution. For the spring network, `k_eq x=0` requires x=0 because the allowed branch stiffnesses are positive. For the spring pendulum with k>0, the downward-equilibrium branch within the allowed ±60-degree range requires theta=0. Requested release positions and initial rates do not create oscillation in these zero-inertia systems.
-
-For the pendulum with both m=0 and k=0, the equation is `0=0`: neither position nor its evolution is determined. The view holds the chosen initial angle as a static display, with x calculated as `l theta` in linear mode or `l sin(theta)` in trig mode. It does not claim that Newton's law determined a zero angular acceleration. The snapshot's rates and accelerations use numeric zero placeholders so drawing and formatting remain finite; the interface must label the dynamics as undetermined.
-
-All zero-mass snapshots report zero forces, torques, kinetic/potential energies, and EOM residual. Their inertias and oscillation amplitudes are zero. `Model.omega`, `frequency`, and `period` are numeric zero sentinels for **no defined oscillation rhythm**, displayed as unavailable by the interface. These sentinels are not the limit of the positive-mass frequency formula as m approaches zero. The clock uses a safe display duration and must not divide by the zero period or animate inertial motion.
 
 Massless tests verify exact zero input, static balance, the wholly degenerate case, finite model/snapshot fields, invalid-time handling, and preservation of positive-mass cached trajectories.
