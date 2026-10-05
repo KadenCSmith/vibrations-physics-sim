@@ -1,6 +1,6 @@
 # Teaching notes
 
-The first two simulations implement the undamped problems in Prof. Lee’s ENGR 317 exam review; the third follows the separately supplied compound spring diagram. The pendulum defaults to the full trigonometric equation, with a selectable small-angle comparison. Both spring systems are linear. The numerical defaults are illustrative because the source problems specify symbolic values. Physical inputs use SI units. Degrees appear only at angular input and display boundaries.
+The first two simulations implement the undamped problems in Prof. Lee’s ENGR 317 exam review; the third follows the separately supplied compound spring diagram; the fourth follows the inverted uniform-bar problem and its supplied Lagrange formula. The hanging pendulum defaults to the full trigonometric equation, with a selectable small-angle comparison. Both spring systems and the inverted bar use linear models. The numerical defaults are illustrative because the source problems specify symbolic values. Physical inputs use SI units. Degrees appear only at angular input and display boundaries.
 
 ## Problem 1: Spring pendulum
 
@@ -60,6 +60,23 @@ Let x be mass displacement downward from loaded equilibrium, and dC the collecto
 
 These answer the three requested rhythm quantities. For an explicit example with every individual spring at 30 N/m and mass 2 kg, k_L = 15 N/m, k_P = 45 N/m, k_eq = 18 N/m, ωₙ = 3 rad/s, fₙ ≈ 0.4775 Hz and T ≈ 2.094 s. The app updates these results with the physical settings. Gravity sets the static extension mg/k_eq; it cancels from the oscillation equation measured about loaded equilibrium. Zero mass is the static constraint x = 0 and has no defined frequency or period.
 
+## Problem 4: Inverted spring pendulum
+
+This mass is a uniform bar, so its inertia is mℓ²/3 rather than the point-mass value mℓ². The center of mass sits at ℓ/2. The two springs each have stiffness k and attach at the top, ℓ from the lower pivot. For a small tilt θ, their deflections are approximately +ℓθ and −ℓθ. Both forces restore the top toward upright. Gravity lowers the center of mass as the bar tilts, so its torque pushes the tilt farther from upright.
+
+    T = ½(mℓ²/3)θ̇²
+    U = kℓ²θ² − mgℓθ²/4
+    C = 2kℓ² − mgℓ/2
+    (mℓ²/3)θ̈ + Cθ = 0
+
+The energy method differentiates T + U and recovers the equation wherever θ̇ is nonzero, then extends it continuously through turning points. The Lagrange tab uses the exact form provided in the second screenshot: d/dt(∂T/∂θ̇) − ∂T/∂θ + ∂U/∂θ = 0. The individual partial derivatives show why both approaches give the same result.
+
+Only positive C and positive mass produce oscillation. In that regime, ωₙ = √(6k/m − 3g/(2ℓ)) rad/s, f = ωₙ/(2π) Hz, and period = 2π/ωₙ seconds. The stability threshold for **each** spring is k = mg/(4ℓ). The default m = 2 kg, ℓ = 1.2 m, k = 8 N/m and g = 9.81 m/s² give J₀ = 0.96 kg·m², C = 11.268 N·m/rad, ωₙ ≈ 3.426 rad/s, f ≈ 0.545 Hz, and period ≈ 1.834 s.
+
+At the threshold, initial angle holds if released from rest, while nonzero initial angular velocity produces neutral drift. Below the threshold, the response grows or decays exponentially according to its initial conditions; λ is a growth rate rather than a frequency. Use the neutral and unstable examples in Toolbox to see these distinct cases. Signed gravitational potential is negative about upright, spring potential is positive, and kinetic plus total potential remains constant.
+
+The small-angle preview stops at ±12° to keep its scope clear. Restart, scrub backward, or change the settings to explore again. It does not animate a full nonlinear fall. With zero bar mass and positive springs, only θ = 0 satisfies the torque constraint; with both mass and stiffness zero, the equation cannot determine motion and the held angle is illustrative.
+
 ## Analytical solution for linear modes
 
 For the network, or the small-angle pendulum comparison, let q = x or θ with initial coordinate q₀ and initial rate q̇₀:
@@ -93,7 +110,7 @@ If pendulum mass and spring stiffness are both zero, the torque equation is simp
 
 ## Interface intent
 
-All models autoplay at quarter speed. Explicit Pause holds the clock until Play is pressed. Edits and problem changes restart the trajectory without changing that playback intent. Hidden tabs suspend animation and resume when visible.
+All models autoplay at quarter speed. Explicit Pause holds the clock until Play is pressed. Edits and problem changes restart the trajectory without changing that playback intent. Hidden tabs suspend animation and resume when visible. The inverted bar holds at its small-angle boundary or at the end of a nonperiodic observation window; Replay starts that same trajectory again.
 
 The side panel connects the drawing to the equation at the same simulation time. Constants and time-varying quantities are labeled with symbols, names, units, and consistent colors, so each number can be traced into the substituted equation. Its motion tab gives the response and natural frequency; its derivation tab explains how the equation is assembled; its energy tab displays the transfer between kinetic and potential energy. The spring pendulum derivation offers both Newton and Lagrange approaches. Equation rendering includes semantic MathML for assistive technology.
 

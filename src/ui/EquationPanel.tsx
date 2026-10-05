@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import type { Model, Parameters, PendulumMode, ProblemId, Snapshot } from '../physics/model';
 import { compoundDeformation, deriveCompoundStiffness } from '../physics/model';
 import { MathFormula } from './Math';
+import { InvertedEquationPanel } from './InvertedEquationPanel';
 
 type EquationPanelProps = {
   problem: ProblemId;
@@ -292,6 +293,10 @@ export function EquationPanel({ problem, parameters: p, model, snapshot: s, mode
       { label: 'Spring potential', value: s.springPotential, className: 'spring-energy' },
     ]
     : [{ label: 'Spring potential', value: s.springPotential, className: 'spring-energy' }];
+
+  if (problem === 'inverted') {
+    return <InvertedEquationPanel parameters={p} model={model} snapshot={s} />;
+  }
 
   if (problem === 'compound') {
     return <CompoundEquationPanel problem={problem} parameters={p} model={model} snapshot={s} mode={mode} />;

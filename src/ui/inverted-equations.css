@@ -1,0 +1,9 @@
+.inverted-equation-panel .inverted-torque-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.inverted-equation-panel .gravity-term{color:var(--force)}
+.inverted-signed-energy-track{height:6px;position:relative;background:#202020;margin-top:10px}
+.inverted-signed-energy-zero{position:absolute;left:50%;top:-3px;width:1px;height:12px;background:#777;z-index:1}
+.inverted-signed-energy-fill{position:absolute;top:0;height:100%;background:currentColor}
+.inverted-energy-axis{display:flex;justify-content:space-between;color:#666;font:8px ui-monospace,monospace;margin-top:12px}
+.inverted-equation-panel .energy-total{gap:10px;align-items:baseline}
+.inverted-equation-panel .energy-total output{flex-shrink:0}
+@media(max-width:380px){.inverted-equation-panel .inverted-torque-grid{grid-template-columns:1fr}.inverted-equation-panel .equation-term span{min-height:0}}

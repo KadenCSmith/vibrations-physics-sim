@@ -1,6 +1,7 @@
 /** Undamped models for the ENGR 317 exam-review diagrams. */
-export type ProblemId = 'pendulum' | 'network' | 'compound';
+export type ProblemId = 'pendulum' | 'network' | 'compound' | 'inverted';
 export type PendulumMode = 'linear' | 'trig';
+export type InvertedStability = 'stable' | 'neutral' | 'unstable' | 'constraint' | 'free';
 
 /** Physical quantities use SI units; the two named angle inputs use degrees. */
 export interface Parameters {
@@ -96,9 +97,17 @@ export interface Model {
   k45: number;
   initialCoordinate: number;
   initialRate: number;
-  /** Turning amplitude including initial rate; Infinity for a rotating pendulum. */
+  /** Turning amplitude; for nonperiodic inverted motion, max |theta| in the observation window. */
   amplitude: number;
   xAmplitude: number;
+  /** The inverted bar's stiffness classification, including the two zero-mass cases. */
+  stability?: InvertedStability;
+  /** Exponential rate for an unstable inverted bar; zero in its other regimes. */
+  growthRate?: number;
+  /** First 12-degree boundary time; Infinity means the sampled motion remains within it. */
+  smallAngleEndTime?: number;
+  /** Finite plotting/playback window for the inverted bar, never beyond its angle boundary. */
+  observationDuration?: number;
 }
 
 export interface Snapshot {
@@ -112,7 +121,7 @@ export interface Snapshot {
   theta: number;
   thetaDot: number;
   thetaDDot: number;
-  /** Net horizontal force m*a in trig pendulum; equivalent restoring force otherwise. */
+  /** Net m*a in trig pendulum; inverted top-equivalent torque/L=(m/3)*a; restoring force otherwise. */
   force: number;
   /** Actual horizontal pendulum spring force, or total restoring force on the spring-network mass. */
   springForce: number;
@@ -129,13 +138,14 @@ export interface Snapshot {
   residual: number;
   /** Network's massless k4/k5 junction displacement, positive downward. */
   seriesJunction: number;
-  /** Signed equilibrium-relative elongations: k1...k5 for network, seven physical springs for compound. */
+  /** Network: k1...k5; compound: seven springs; inverted: two local axial elongations [x,-x]. */
   branchExtensions: number[];
-  /** Network k4/k5 repeat one series force; compound lists seven springs with only final k5 on the mass. */
+  /** Inverted axial signs [-kx,+kx] do not sum to its top force; network series entries repeat one force. */
   branchForces: number[];
 }
 
 const DEG_TO_RAD = Math.PI / 180;
+const SMALL_ANGLE_LIMIT = 12 * DEG_TO_RAD;
 
 /**
  * Missing/nonfinite entries use defaults. Values are clamped, never rounded.
@@ -189,6 +199,114 @@ export function compoundDeformation(parameters: Parameters, x: number): Compound
   return { upperJunction, lowerJunction, collector, extensions, forces };
 }
 
+type InvertedMotion = { q: number; rate: number; acceleration: number };
+
+function invertedMotion(model: Model, time: number): InvertedMotion {
+  const q0 = model.initialCoordinate;
+  const rate0 = model.initialRate;
+  if (model.stability === 'neutral') return { q: q0 + rate0 * time, rate: rate0, acceleration: 0 };
+  if (model.stability === 'unstable') {
+    const growth = model.growthRate!;
+    // Equivalent to q0*cosh(rt)+(rate0/r)*sinh(rt), without cancellation on a decaying branch.
+    const growing = 0.5 * (q0 + rate0 / growth);
+    const decaying = 0.5 * (q0 - rate0 / growth);
+    const forward = growing === 0 ? 0 : growing * Math.exp(growth * time);
+    const backward = decaying === 0 ? 0 : decaying * Math.exp(-growth * time);
+    const q = forward + backward;
+    return { q, rate: growth * (forward - backward), acceleration: growth ** 2 * q };
+  }
+  const cosine = Math.cos(model.omega * time);
+  const sine = Math.sin(model.omega * time);
+  const q = q0 * cosine + (rate0 / model.omega) * sine;
+  return {
+    q,
+    rate: -q0 * model.omega * sine + rate0 * cosine,
+    acceleration: -(model.omega ** 2) * q,
+  };
+}
+
+/** First contact with either small-angle boundary, without clipping or changing the response. */
+function invertedBoundaryTime(model: Model): number {
+  const q0 = model.initialCoordinate;
+  const rate0 = model.initialRate;
+  if (Math.abs(q0) >= SMALL_ANGLE_LIMIT) return 0;
+  if (model.stability === 'neutral') {
+    return rate0 === 0 ? Infinity : (Math.sign(rate0) * SMALL_ANGLE_LIMIT - q0) / rate0;
+  }
+  if (model.stability === 'unstable') {
+    const growth = model.growthRate!;
+    // q=A*exp(rt)+B*exp(-rt). With A=0 the response decays toward upright equilibrium.
+    const growing = 0.5 * (q0 + rate0 / growth);
+    const decaying = 0.5 * (q0 - rate0 / growth);
+    if (growing === 0) return Infinity;
+    const sign = Math.sign(growing);
+    const a = sign * growing;
+    const b = sign * decaying;
+    const discriminant = Math.max(0, SMALL_ANGLE_LIMIT ** 2 - 4 * a * b);
+    const exponential = (SMALL_ANGLE_LIMIT + Math.sqrt(discriminant)) / (2 * a);
+    return Math.max(0, Math.log(exponential) / growth);
+  }
+  const amplitude = Math.hypot(q0, rate0 / model.omega);
+  if (amplitude < SMALL_ANGLE_LIMIT) return Infinity;
+  const phase = Math.atan2(rate0 / model.omega, q0);
+  const alpha = Math.acos(Math.min(1, SMALL_ANGLE_LIMIT / amplitude));
+  const cycle = 2 * Math.PI;
+  const phases = [alpha, -alpha, Math.PI + alpha, Math.PI - alpha];
+  return Math.min(...phases.map((target) => ((phase + target) % cycle + cycle) % cycle / model.omega));
+}
+
+/** Uniform upright bar, pivoted at its bottom, with two k springs at its full height. */
+function deriveInvertedModel(p: Parameters): Model {
+  const inertia = p.m * p.l ** 2 / 3;
+  const springStiffness = 2 * p.k * p.l ** 2;
+  const gravityStiffness = p.m * p.g * p.l / 2;
+  const rawStiffness = springStiffness - gravityStiffness;
+  // Recognize an exactly neutral parameter ratio despite multiplication roundoff.
+  const tolerance = 16 * Number.EPSILON * Math.max(springStiffness, gravityStiffness);
+  const coordinateStiffness = Math.abs(rawStiffness) <= tolerance ? 0 : rawStiffness;
+  const stability: InvertedStability = coordinateStiffness > 0 ? 'stable' : coordinateStiffness < 0 ? 'unstable' : 'neutral';
+  const omega = stability === 'stable' ? Math.sqrt(coordinateStiffness / inertia) : 0;
+  const growthRate = stability === 'unstable' ? Math.sqrt(-coordinateStiffness / inertia) : 0;
+  const model: Model = {
+    problem: 'inverted', massless: false, stability, growthRate,
+    omega, frequency: omega / (2 * Math.PI), period: omega > 0 ? 2 * Math.PI / omega : Infinity,
+    inertia, coordinateStiffness, linearStiffness: coordinateStiffness / p.l ** 2, k45: 0,
+    initialCoordinate: p.theta0Deg * DEG_TO_RAD, initialRate: p.omega0Deg * DEG_TO_RAD,
+    amplitude: 0, xAmplitude: 0,
+  };
+  model.smallAngleEndTime = invertedBoundaryTime(model);
+  model.observationDuration = Math.min(stability === 'stable' ? 4 * model.period : 8, model.smallAngleEndTime);
+  model.amplitude = stability === 'stable'
+    ? Math.hypot(model.initialCoordinate, model.initialRate / omega)
+    : Math.max(Math.abs(model.initialCoordinate), Math.abs(invertedMotion(model, model.observationDuration).q));
+  model.xAmplitude = p.l * model.amplitude;
+  return model;
+}
+
+function sampleInvertedModel(p: Parameters, time: number): Snapshot {
+  const model = deriveInvertedModel(p);
+  const t = Number.isFinite(time) ? time : 0;
+  const { q: theta, rate: thetaDot, acceleration: thetaDDot } = invertedMotion(model, t);
+  const x = p.l * theta;
+  const v = p.l * thetaDot;
+  const a = p.l * thetaDDot;
+  const kinetic = 0.5 * model.inertia * thetaDot ** 2;
+  const gravityPotential = -p.m * p.g * p.l * theta ** 2 / 4;
+  const springPotential = p.k * p.l ** 2 * theta ** 2;
+  const potential = 0.5 * model.coordinateStiffness * theta ** 2;
+  const inertialTerm = model.inertia * thetaDDot;
+  const restoringTerm = model.coordinateStiffness * theta;
+  return {
+    time: t, q: theta, qDot: thetaDot, qDDot: thetaDDot,
+    x, v, a, theta, thetaDot, thetaDDot,
+    force: -model.linearStiffness * x, springForce: -2 * p.k * x,
+    gravityTorque: p.m * p.g * p.l * theta / 2, springTorque: -2 * p.k * p.l ** 2 * theta,
+    kinetic, potential, gravityPotential, springPotential, totalEnergy: kinetic + potential,
+    inertialTerm, restoringTerm, residual: inertialTerm + restoringTerm, seriesJunction: 0,
+    branchExtensions: [x, -x], branchForces: [-p.k * x, p.k * x],
+  };
+}
+
 function deriveSanitizedModel(problem: ProblemId, p: Parameters): Model {
   const k45 = problem === 'compound' ? 0 : (p.k4 * p.k5) / (p.k4 + p.k5);
   const isPendulum = problem === 'pendulum';
@@ -221,8 +339,9 @@ function deriveSanitizedModel(problem: ProblemId, p: Parameters): Model {
 }
 
 export function deriveModel(problem: ProblemId, parameters: Parameters, mode: PendulumMode = 'linear'): Model {
-  const p = sanitizeParameters(parameters, mode);
+  const p = sanitizeParameters(parameters, problem === 'inverted' ? 'linear' : mode);
   if (p.m === 0) return deriveMasslessModel(problem, p);
+  if (problem === 'inverted') return deriveInvertedModel(p);
   return problem === 'pendulum' && mode === 'trig'
     ? getTrigTrajectory(p).model
     : deriveSanitizedModel(problem, p);
@@ -234,8 +353,9 @@ export function deriveModel(problem: ProblemId, parameters: Parameters, mode: Pe
  * Trig mode uses the cached numerical cycle and x=l*sin(theta).
  */
 export function sampleModel(problem: ProblemId, parameters: Parameters, time: number, mode: PendulumMode = 'linear'): Snapshot {
-  const p = sanitizeParameters(parameters, mode);
+  const p = sanitizeParameters(parameters, problem === 'inverted' ? 'linear' : mode);
   if (p.m === 0) return sampleMasslessModel(problem, p, time, mode);
+  if (problem === 'inverted') return sampleInvertedModel(p, time);
   if (problem === 'pendulum' && mode === 'trig') return sampleTrigPendulum(p, time);
   const model = deriveSanitizedModel(problem, p);
   const t = Number.isFinite(time) ? time : 0;
@@ -294,16 +414,18 @@ export function sampleModel(problem: ProblemId, parameters: Parameters, time: nu
 }
 
 function deriveMasslessModel(problem: ProblemId, p: Parameters): Model {
-  const k45 = problem === 'compound' ? 0 : (p.k4 * p.k5) / (p.k4 + p.k5);
+  const k45 = problem === 'compound' || problem === 'inverted' ? 0 : (p.k4 * p.k5) / (p.k4 + p.k5);
   const isPendulum = problem === 'pendulum';
+  const isInverted = problem === 'inverted';
   const coordinateStiffness = isPendulum
     ? p.k * p.l ** 2
-    : problem === 'compound'
-      ? deriveCompoundStiffness(p).kEquivalent
-      : p.k1 + p.k2 + p.k3 + k45;
+    : isInverted ? 2 * p.k * p.l ** 2
+      : problem === 'compound'
+        ? deriveCompoundStiffness(p).kEquivalent
+        : p.k1 + p.k2 + p.k3 + k45;
   // With no mass and no pendulum spring, 0=0 leaves position/evolution undetermined.
   // The view holds the chosen angle, while reporting the indeterminate dynamics.
-  const initialCoordinate = isPendulum && p.k === 0 ? p.theta0Deg * DEG_TO_RAD : 0;
+  const initialCoordinate = (isPendulum || isInverted) && p.k === 0 ? p.theta0Deg * DEG_TO_RAD : 0;
   return {
     problem,
     massless: true,
@@ -312,19 +434,24 @@ function deriveMasslessModel(problem: ProblemId, p: Parameters): Model {
     period: 0,
     inertia: 0,
     coordinateStiffness,
-    linearStiffness: isPendulum ? p.k : coordinateStiffness,
+    linearStiffness: isPendulum ? p.k : isInverted ? 2 * p.k : coordinateStiffness,
     k45,
     initialCoordinate,
     initialRate: 0,
     amplitude: 0,
     xAmplitude: 0,
+    ...(isInverted ? {
+      stability: p.k > 0 ? 'constraint' as const : 'free' as const,
+      growthRate: 0, smallAngleEndTime: Infinity, observationDuration: 1,
+    } : {}),
   };
 }
 
 function sampleMasslessModel(problem: ProblemId, p: Parameters, time: number, mode: PendulumMode): Snapshot {
   const model = deriveMasslessModel(problem, p);
-  const theta = problem === 'pendulum' ? model.initialCoordinate : 0;
-  const x = problem === 'pendulum' ? p.l * (mode === 'trig' ? Math.sin(theta) : theta) : 0;
+  const isAngular = problem === 'pendulum' || problem === 'inverted';
+  const theta = isAngular ? model.initialCoordinate : 0;
+  const x = isAngular ? p.l * (problem === 'pendulum' && mode === 'trig' ? Math.sin(theta) : theta) : 0;
   return {
     time: Number.isFinite(time) ? time : 0,
     q: model.initialCoordinate,
@@ -350,8 +477,8 @@ function sampleMasslessModel(problem: ProblemId, p: Parameters, time: number, mo
     restoringTerm: 0,
     residual: 0,
     seriesJunction: 0,
-    branchExtensions: problem === 'pendulum' ? [x] : Array(problem === 'compound' ? 7 : 5).fill(0),
-    branchForces: problem === 'pendulum' ? [0] : Array(problem === 'compound' ? 7 : 5).fill(0),
+    branchExtensions: problem === 'pendulum' ? [x] : problem === 'inverted' ? [x, -x] : Array(problem === 'compound' ? 7 : 5).fill(0),
+    branchForces: problem === 'pendulum' ? [0] : Array(problem === 'compound' ? 7 : problem === 'inverted' ? 2 : 5).fill(0),
   };
 }
 

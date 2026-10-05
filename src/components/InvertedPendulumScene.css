@@ -1,0 +1,22 @@
+.inverted-pendulum-scene{touch-action:none}
+.inverted-pendulum-scene__spring path{fill:none;stroke-width:1.8;stroke-linecap:round}
+.inverted-pendulum-scene__spring text{font:11px ui-monospace,monospace}
+.inverted-pendulum-scene__wall-hatch path{fill:none;stroke:#686868;stroke-width:1}
+.inverted-pendulum-scene__bar{stroke:#b6b6b6;stroke-width:8;stroke-linecap:round}
+.inverted-pendulum-scene__bar-center{stroke:#e0e0e0;stroke-width:1;opacity:.55}
+.inverted-pendulum-scene__cg{fill:#151515;stroke:#d6d6d6;stroke-width:1.6}
+.inverted-pendulum-scene__pivot-support{fill:#080808;stroke:#777;stroke-width:1}
+.inverted-pendulum-scene__pivot{fill:#171717;stroke:#ddd;stroke-width:2}
+.inverted-pendulum-scene__dimension{fill:none;stroke:#626262;stroke-width:1}
+.inverted-pendulum-scene__angle{fill:none;stroke:#e8b18a;stroke-width:1.2}
+.inverted-pendulum-scene__stability{fill:#aaa;font:10px ui-monospace,monospace}
+.inverted-pendulum-scene__arrow{fill:none;stroke-width:1.7}
+.inverted-pendulum-scene__arrow text{stroke:none;font:11px ui-monospace,monospace}
+.inverted-pendulum-scene__gravity{stroke:#e8b18a}.inverted-pendulum-scene__gravity text,.inverted-pendulum-scene__torque-gravity{fill:#e8b18a}
+.inverted-pendulum-scene__restoring{stroke:#6ee7c9}.inverted-pendulum-scene__restoring text,.inverted-pendulum-scene__torque-spring{fill:#6ee7c9}
+.inverted-pendulum-scene__torque-gravity,.inverted-pendulum-scene__torque-spring{font:11px ui-monospace,monospace}
+.inverted-pendulum-scene__hit-target{fill:transparent;stroke:none;pointer-events:all}
+.inverted-pendulum-scene__top-node{fill:#c7c7c7;stroke:#080808;stroke-width:1}
+.inverted-pendulum-scene__handle{touch-action:none;outline:none}
+.inverted-pendulum-scene__handle:focus-visible .inverted-pendulum-scene__top-node{stroke:#fff;stroke-width:3}
+.inverted-pendulum-scene-wrap.is-dragging{cursor:grabbing}

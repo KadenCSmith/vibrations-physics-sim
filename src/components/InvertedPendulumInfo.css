@@ -1,0 +1,9 @@
+.inverted-pendulum-info__values{margin-top:15px!important}
+.inverted-pendulum-info__values>div{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:12px 0}
+.inverted-pendulum-info__values dd{flex-shrink:0;margin:0;color:#d9ad87}
+.inverted-pendulum-info__spring-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:15px 0}
+.inverted-pendulum-info__spring-pair h5{font-size:14px!important}
+.inverted-pendulum-info__spring-pair .math-block{font-size:12px}
+.inverted-pendulum-info__energy{border-top:1px solid #292929;padding-top:23px;margin-top:25px}
+.inverted-pendulum-info p strong{color:#bdbdbd;font-weight:500}
+@media(max-width:650px){.inverted-pendulum-info__spring-pair{grid-template-columns:minmax(0,1fr)}}

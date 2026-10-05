@@ -11,14 +11,15 @@ const problems: { id: Problem; title: string; detail: string }[] = [
   { id: 'pendulum', title: 'Spring pendulum', detail: 'Gravity and a horizontal spring · angular motion' },
   { id: 'network', title: 'Spring network', detail: 'Parallel paths and a series branch · vertical translation' },
   { id: 'compound', title: 'Compound spring system', detail: 'Two parallel pairs, a bypass branch, and a final spring' },
+  { id: 'inverted', title: 'Inverted spring pendulum', detail: 'A uniform bar, two springs, and competing gravity · energy and Lagrange' },
 ]
 const guides = [
-  { title: 'Choose a problem', text: 'Open the Simulation dropdown to switch between the spring pendulum, five-spring network, and compound spring system. Each model has its own equations and controls.' },
+  { title: 'Choose a problem', text: 'Open the Simulation dropdown to switch between four problems. Keyboard shortcuts 1–4 select them. Each model has its own equations and controls.' },
   { title: 'Release, pause, and inspect', text: 'All simulations play automatically at quarter speed. Drag the mass to change the release position, then release it to continue. Use Pause to hold an instant; Play resumes. Switching problems and opening Toolbox or Finder preserve playback. Hidden tabs resume when visible unless you paused.' },
   { title: 'Change a physical parameter', text: 'Toolbox contains masses, lengths, and spring stiffnesses. A parameter change starts a new trajectory from its initial condition. The values use the units shown beside each control.' },
-  { title: 'Understand the model', text: 'The pendulum defaults to the full sin θ / cos θ torque equation with ideal horizontal spring force. Toolbox offers a small-angle linear comparison. The five-spring network has k₄ and k₅ in series. The compound system reduces its two parallel pairs, combines their left series path with k₄ in parallel, then adds k₅ in series. All models are undamped; their energy stays constant.' },
-  { title: 'Read the response', text: 'Angular frequency is measured in radians per second; frequency in cycles per second. The full pendulum period depends on release angle. The network and linear pendulum comparison have amplitude-independent frequency. Playback speed changes viewing speed without changing physical time or the equations.' },
-  { title: 'Find every formula', text: 'Physics documentation groups equations by spring pendulum, spring network, compound spring system, shared foundations, and lecture extensions. Expand a topic for its formulas, intermediate derivatives, usage, source photos, and corrections. Search within formulas to find a concept or photo number.' },
+  { title: 'Understand the model', text: 'The hanging pendulum defaults to the full sin θ / cos θ torque equation, with a small-angle comparison in Toolbox. The two spring networks follow their supplied connections. The inverted uniform bar uses the requested small-angle model: two springs restore it, while gravity destabilizes it. Its energy and Lagrange derivations give the same equation. All models are undamped.' },
+  { title: 'Read the response', text: 'Angular frequency is measured in radians per second; frequency in cycles per second. The inverted bar only oscillates when its net angular stiffness is positive. Neutral and unstable motion have no finite oscillation period. This small-angle preview stops at ±12°; use Restart or change the parameters to explore again. Playback speed changes viewing speed without changing physical frequency.' },
+  { title: 'Find every formula', text: 'Physics documentation groups equations by all four simulations, shared foundations, and lecture extensions. Expand a topic for its formulas, intermediate derivatives, usage, source photos, and corrections. Search within formulas to find a concept or photo number.' },
 ]
 
 function Pinwheel() {

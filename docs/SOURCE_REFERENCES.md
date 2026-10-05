@@ -6,6 +6,8 @@ The first two apparatus diagrams are from `Adobe Scan Oct 4, 2026.pdf`. The exam
 
 Simulation 03 comes from the user's `Screenshot 2026-10-04 at 6.40.13 PM.png` (the original filename uses a narrow space before PM). It asks for equivalent stiffness and, with a mass attached to the final k₅, natural frequency in rad/s and Hz and period. The diagram contains seven physical springs: two k₁, one k₂, two k₃, one k₄, and one k₅. The screenshot provides symbolic quantities, so the app's numerical values are illustrative. This screenshot is separate from the 38 reviewed lecture photographs and is not redistributed.
 
+Simulation 04 comes from `Screenshot 2026-10-04 at 6.59.45 PM.png`, with the supplied Lagrange equation in `Screenshot 2026-10-04 at 7.00.41 PM.png` (the original filenames use narrow spaces before PM). It requests energy and Lagrange derivations for an inverted uniform bar, and natural frequency in rad/s, Hz, and period. Its two identical springs attach at the top; its center of mass is halfway up; its pivot inertia is mℓ²/3. Both screenshots provide symbolic quantities and stay outside the public repository.
+
 | Photo | Content |
 | --- | --- |
 | IMG_5897.HEIC | Topic 01: definition of vibration; spring stores potential energy, mass stores kinetic energy, damper dissipates energy |

@@ -96,6 +96,22 @@ For displacement `x` positive downward from loaded equilibrium, the collector mo
 
 The equation is `m*xDDot+k_eq*x=0`, with `omega_n=sqrt(k_eq/m)`, `f=omega_n/(2pi)`, and `T=2pi/omega_n`. The seven physical incremental spring energies sum to `½k_eq*x²`. Loaded equilibrium sits `mg/k_eq` below the unloaded mass position. Gravity cancels from the vibration equation after shifting to that equilibrium. Internal junctions and springs are massless; only the attached mass contributes kinetic energy. Equal individual spring stiffnesses `k` produce `kLeft=k/2`, `kParallel=3k/2`, and `k_eq=3k/5`.
 
+## Inverted uniform bar with two top springs
+
+Simulation 04 follows the supplied small-angle problem. The uniform bar has total mass m, length ℓ, pivot at its bottom, center of mass at ℓ/2, and inertia `J₀=mℓ²/3`. Both identical springs have stiffness k and attach at the top. Positive θ tilts the bar right of upright. The linearized top coordinate is `x=ℓθ`; the drawing still rotates the bar geometrically and labels that approximation. The left spring extends by x, while the right spring compresses by x. Each contributes restoring torque `−kℓ²θ`, so the combined spring torque is `−2kℓ²θ`. Gravity contributes destabilizing torque `+mgℓθ/2`.
+
+With upright gravitational potential chosen as zero, `T=½J₀θ̇²` and the quadratic potential is `U=kℓ²θ²−mgℓθ²/4=½Cθ²`, where `C=2kℓ²−mgℓ/2`. The negative gravitational energy change represents a falling center of mass. Differentiating `E=T+U` gives `dE/dt=θ̇(J₀θ̈+Cθ)=0`; the smooth mechanical equation extends through turning points by continuity. The supplied Lagrange form is `d/dt(∂T/∂θ̇)−∂T/∂θ+∂U/∂θ=0`. Its terms are `J₀θ̈`, zero, and `Cθ`, yielding the same equation:
+
+`(mℓ²/3)θ̈+(2kℓ²−mgℓ/2)θ=0`.
+
+For positive mass and `C>0`, `ωₙ=√(C/J₀)=√(6k/m−3g/(2ℓ))`, `f=ωₙ/(2π)`, and `T_period=2π/ωₙ`. Stability requires `k>mg/(4ℓ)`. At equality, `θ̈=0` and `θ(t)=θ₀+θ̇₀t`; frequency is zero and there is no finite oscillation period. For `C<0`, `λ=√(−C/J₀)` is the exponential growth rate, not an oscillation frequency, and `θ(t)=θ₀cosh(λt)+(θ̇₀/λ)sinh(λt)`. The evaluator uses equivalent exponential coefficients to preserve a precisely decaying branch without cancellation. No imaginary natural frequency is displayed.
+
+The angular coordinate and energies always follow the linearized model. Actual bar drawing coordinates use sin/cos solely for illustration; the exact-height and trigonometric formulas in Finder explain the linearization and are not a second nonlinear animated model. Motion with positive stiffness repeats after four cycles only when its full amplitude stays inside ±12°. All other paths have a finite observation window and hold at the first contact with ±12°, or after eight physical seconds for nonperiodic motion. This validity limit does not modify the analytical solution. The graph samples the same permitted window and scales neutral/unstable angular rate and acceleration from actual samples rather than a zero oscillation frequency.
+
+For `m=0,k>0`, the equation reduces to `2kℓ²θ=0`, selecting upright balance without predicting dynamics. For `m=k=0`, it is `0=0`; the selected angle is held illustratively. Zero-inertia handling precedes frequency or acceleration division. The UI reports acceleration and frequency as undefined.
+
+Snapshot `force` is the torque-equivalent top force `−(C/ℓ²)x=(m/3)a_top`; it is not `m*a_top` for a distributed bar. `springForce=−2kx` is the actual combined horizontal spring force in the linearized model. Physical spring elongations are `[x,−x]`; the corresponding `−kδ` values refer to each spring's own axial coordinate, not a sum of global horizontal forces. Signed gravitational potential may be negative; total energy is conserved without clamping it to zero.
+
 ## Exactly zero mass
 
 The mass control includes `m=0`. All acceleration formulas obtained by dividing by mass or inertia, all frequency formulas containing `1/m`, and all dynamic trajectories described above require **positive mass**. Exactly zero inertia turns the undivided equation into a force or torque constraint. It is not an infinitely fast oscillator, and no oscillatory frequency or period is assigned to the static branch.
