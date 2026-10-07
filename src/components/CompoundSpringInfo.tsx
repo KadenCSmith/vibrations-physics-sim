@@ -16,52 +16,53 @@ function tex(number: number): string {
 
 /** Explanation for the seven-spring compound network, distinct from the five-spring problem. */
 export function CompoundSpringInfo({ parameters: p, model, snapshot: s }: CompoundSpringInfoProps) {
+  const inverted = model.problem === 'compound-inverted';
   const stiffness = deriveCompoundStiffness(p);
   const d = compoundDeformation(p, s.x);
   const values = [p.k1, p.k1, p.k2, p.k3, p.k3, p.k4, p.k5];
   const names = ['k₁ · left', 'k₁ · right', 'k₂', 'k₃ · left', 'k₃ · right', 'k₄', 'k₅'];
-  const paths = ['Upper parallel pair', 'Upper parallel pair', 'Middle of left branch', 'Lower parallel pair', 'Lower parallel pair', 'Ceiling to collector C', 'Collector C to mass'];
+  const paths = [inverted ? 'Floor-side parallel pair' : 'Upper parallel pair', inverted ? 'Floor-side parallel pair' : 'Upper parallel pair', 'Middle of left branch', inverted ? 'Mass-side parallel pair' : 'Lower parallel pair', inverted ? 'Mass-side parallel pair' : 'Lower parallel pair', inverted ? 'Floor to collector C' : 'Ceiling to collector C', 'Collector C to mass'];
 
   return <details className="spring-network-info compound-spring-info">
-    <summary>more info</summary>
+    <summary>Spring-by-spring details &amp; reduction</summary>
     <div className="spring-network-info__content">
       <header className="spring-network-info__heading">
         <span className="eyebrow">INSIDE THE COMPOUND NETWORK</span>
         <h3>Seven springs. Reduce the connections in order.</h3>
-        <p>The two upper k₁ springs form a parallel pair. That pair, k₂ and the two lower k₃ springs form the left series branch. The long k₄ spring is parallel with this entire left branch. Finally, k₅ connects their collector to the mass in series.</p>
+        <p>The two k₁ springs nearest the support form a parallel pair. That pair, k₂ and the two k₃ springs form the left series branch. The long k₄ spring is parallel with this entire left branch. Finally, k₅ connects their collector to the mass in series.</p>
       </header>
       <div className="spring-network-info__overview compound-spring-info__reductions">
         <section className="spring-network-info__reduction">
           <h4>1 / Combine each identical parallel pair</h4>
-          <MathFormula tex={String.raw`k_{\mathrm{top}}=k_1+k_1=2k_1`} />
-          <MathFormula className="spring-network-info__substitution" tex={String.raw`k_{\mathrm{top}}=2(${tex(p.k1)})=${tex(stiffness.kTop)}\;\mathrm{N/m}`} />
-          <MathFormula tex={String.raw`k_{\mathrm{bottom}}=k_3+k_3=2k_3`} />
-          <MathFormula className="spring-network-info__substitution" tex={String.raw`k_{\mathrm{bottom}}=2(${tex(p.k3)})=${tex(stiffness.kBottom)}\;\mathrm{N/m}`} />
+          <MathFormula tex={String.raw`k_A=k_1+k_1=2k_1`} />
+          <MathFormula className="spring-network-info__substitution" tex={String.raw`k_A=2(${tex(p.k1)})=${tex(stiffness.kTop)}\;\mathrm{N/m}`} />
+          <MathFormula tex={String.raw`k_B=k_3+k_3=2k_3`} />
+          <MathFormula className="spring-network-info__substitution" tex={String.raw`k_B=2(${tex(p.k3)})=${tex(stiffness.kBottom)}\;\mathrm{N/m}`} />
           <p>Each pair shares one deformation. Its two spring forces add.</p>
         </section>
         <section className="spring-network-info__reduction">
           <h4>2 / Reduce the left series branch</h4>
           <MathFormula tex={String.raw`k_L=\left(\frac1{2k_1}+\frac1{k_2}+\frac1{2k_3}\right)^{-1}`} />
           <MathFormula className="spring-network-info__substitution" tex={String.raw`\begin{aligned}k_L&=\left(\frac1{${tex(stiffness.kTop)}}+\frac1{${tex(p.k2)}}+\frac1{${tex(stiffness.kBottom)}}\right)^{-1}\\&=${tex(stiffness.kLeft)}\;\mathrm{N/m}\end{aligned}`} />
-          <p>The top pair, middle spring and bottom pair carry the same total left-branch force. Their deformations add.</p>
+          <p>The k₁ pair, middle spring and k₃ pair carry the same total left-branch force. Their deformations add.</p>
         </section>
         <section className="spring-network-info__reduction">
           <h4>3 / Put the left branch in parallel with k₄</h4>
           <MathFormula tex={String.raw`k_P=k_L+k_4`} />
           <MathFormula className="spring-network-info__substitution" tex={String.raw`k_P=${tex(stiffness.kLeft)}+${tex(p.k4)}=${tex(stiffness.kParallel)}\;\mathrm{N/m}`} />
-          <p>Both paths run from the fixed ceiling to collector C, so both have total deformation dC. Their forces add at C.</p>
+          <p>Both paths run from the fixed support to collector C, so both have total deformation dC. Their forces add at C.</p>
         </section>
         <section className="spring-network-info__reduction">
           <h4>4 / Connect the final k₅ spring in series</h4>
           <MathFormula tex={String.raw`k_{\mathrm{eq}}=\frac{k_Pk_5}{k_P+k_5}`} />
           <MathFormula className="spring-network-info__substitution" tex={String.raw`\begin{aligned}k_{\mathrm{eq}}&=\frac{${tex(stiffness.kParallel)}(${tex(p.k5)})}{${tex(stiffness.kParallel)}+${tex(p.k5)}}\\&=${tex(stiffness.kEquivalent)}\;\mathrm{N/m}\end{aligned}`} />
-          <p>The ceiling-to-collector assembly and k₅ split the total mass displacement x. Only k₅ touches the mass.</p>
+          <p>The support-to-collector assembly and k₅ split the total mass displacement x. Only k₅ touches the mass.</p>
         </section>
       </div>
 
       <section className="compound-spring-info__nodes" aria-label="Solved junction motion">
         <h4>Each junction moves by its own amount</h4>
-        <p>All displacements below are measured downward from loaded equilibrium. The rigid bars A, B and C have no mass. The scene uses these solved displacements for every spring endpoint.</p>
+        <p>All displacements below are measured {inverted ? 'upward' : 'downward'} from loaded equilibrium. The rigid bars A, B and C have no mass. The scene uses these solved displacements for every spring endpoint.</p>
         <div className="compound-spring-info__node-layout">
           <MathFormula tex={String.raw`\begin{aligned}
             d_C&=\frac{k_5}{k_P+k_5}x\\
@@ -70,9 +71,9 @@ export function CompoundSpringInfo({ parameters: p, model, snapshot: s }: Compou
           \end{aligned}`} />
           <dl>
             <div><dt>Mass displacement x</dt><dd>{signed(s.x)} <small>m</small></dd></div>
-            <div><dt>A · below upper pair</dt><dd>{signed(d.upperJunction)} <small>m</small></dd></div>
-            <div><dt>B · below k₂</dt><dd>{signed(d.lowerJunction)} <small>m</small></dd></div>
-            <div><dt>C · collector above k₅</dt><dd>{signed(d.collector)} <small>m</small></dd></div>
+            <div><dt>A · after support pair</dt><dd>{signed(d.upperJunction)} <small>m</small></dd></div>
+            <div><dt>B · after k₂</dt><dd>{signed(d.lowerJunction)} <small>m</small></dd></div>
+            <div><dt>C · collector before k₅</dt><dd>{signed(d.collector)} <small>m</small></dd></div>
           </dl>
         </div>
       </section>
@@ -117,7 +118,7 @@ export function CompoundSpringInfo({ parameters: p, model, snapshot: s }: Compou
             <div className="spring-network-info__force-total"><dt>Only k₅ acts on the mass</dt><dd>{signed(d.forces[6])} <small>N</small></dd></div>
             <div><dt>Equivalent −k_eq x</dt><dd>{signed(-model.linearStiffness * s.x)} <small>N</small></dd></div>
           </dl>
-          <p>Negative is upward; positive is downward. These are restoring-force signs for the downward-positive coordinate. Displayed values are rounded.</p>
+          <p>Negative is {inverted ? 'downward' : 'upward'}; positive is {inverted ? 'upward' : 'downward'}. These signs use the {inverted ? 'upward' : 'downward'}-positive coordinate. Displayed values are rounded.</p>
         </div>
       </section>
     </div>

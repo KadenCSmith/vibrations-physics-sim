@@ -115,3 +115,20 @@ All models autoplay at quarter speed. Explicit Pause holds the clock until Play 
 The side panel connects the drawing to the equation at the same simulation time. Constants and time-varying quantities are labeled with symbols, names, units, and consistent colors, so each number can be traced into the substituted equation. Its motion tab gives the response and natural frequency; its derivation tab explains how the equation is assembled; its energy tab displays the transfer between kinetic and potential energy. The spring pendulum derivation offers both Newton and Lagrange approaches. Equation rendering includes semantic MathML for assistive technology.
 
 Finder contains the full formula catalogue grouped by simulation, shared foundations, and lecture extensions. Source filenames, corrected note errors, completed blanks, trigonometric identities, intermediate derivatives, and the numerical method are included. Structural stiffness, damping, and the differently numbered practice network are reference examples, not additional active simulations.
+
+
+## Problem 5: Inverted compound spring network
+
+Simulation 05 mirrors the seven-spring diagram vertically: the support is on the floor and the mass sits above the final k₅ spring. All springs remain attached to the same nodes. The mass and rigid massless junctions are guided vertically. Ideal springs carry tension and compression, without buckling or loss of contact.
+
+Positive x, u (A), v (B) and c (C) point upward from loaded equilibrium. The reductions and incremental deformations are identical to problem 3:
+
+    k_A = 2k₁, k_B = 2k₃
+    k_L = [1/k_A + 1/k₂ + 1/k_B]⁻¹
+    k_P = k_L + k₄
+    k_eq = k_P k₅/(k_P + k₅)
+    c = k₅x/(k_P + k₅), u = k_Lc/(2k₁), v = u + k_Lc/k₂
+
+Gravity is downward, so signed static extension Δ_s = −mg/k_eq is negative (compression). The absolute force balance is m ẍ = −mg − k_eq(Δ_s + x). After substituting static equilibrium, m ẍ + k_eq x = 0. The same parameters give the same scalar response, natural frequency and energy as problem 3; physical motion is reflected vertically. At zero mass, x = 0 is a static constraint.
+
+The visible Series or parallel? cards on problems 02, 03 and 05 compare actual connected springs or reduced groups. Series members carry the same force and divide deformation in inverse proportion to stiffness. Parallel members share deformation and divide force in proportion to stiffness. Live values exclude static preload. The equal-spring and soft-k₅ experiments restart the current model with a 0.12 m release while preserving playback intent. Full reduction and individual values remain available under Spring-by-spring details & reduction.

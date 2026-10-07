@@ -141,3 +141,20 @@ Its amplitude is `hypot(q0,qDot0/omega)`. `q=theta` for the pendulum and `q=x` f
 Tests verify initial conditions, periodicity, energy conservation, finite-difference derivatives, Newton/Lagrange residuals, the pure-pendulum limit, inertia and mass scaling, correct network connectivity, junction force balance, and equality of physical-branch and equivalent-spring energies. Additional trig tests check exact torque and potential, complete versus horizontal kinetic energy, period against an independent arithmetic–geometric-mean result for the simple pendulum, quarter-cycle turning points, finite-amplitude period changes, the small-angle limit, sign symmetry, reproducible cache replacement, long scrubs, and high-energy rotation detection.
 
 Massless tests verify exact zero input, static balance, the wholly degenerate case, finite model/snapshot fields, invalid-time handling, and preservation of positive-mass cached trajectories.
+
+
+## Problem 5: Inverted compound spring network
+
+Simulation 05 mirrors the seven-spring diagram vertically: the support is on the floor and the mass sits above the final k₅ spring. All springs remain attached to the same nodes. The mass and rigid massless junctions are guided vertically. Ideal springs carry tension and compression, without buckling or loss of contact.
+
+Positive x, u (A), v (B) and c (C) point upward from loaded equilibrium. The reductions and incremental deformations are identical to problem 3:
+
+    k_A = 2k₁, k_B = 2k₃
+    k_L = [1/k_A + 1/k₂ + 1/k_B]⁻¹
+    k_P = k_L + k₄
+    k_eq = k_P k₅/(k_P + k₅)
+    c = k₅x/(k_P + k₅), u = k_Lc/(2k₁), v = u + k_Lc/k₂
+
+Gravity is downward, so signed static extension Δ_s = −mg/k_eq is negative (compression). The absolute force balance is m ẍ = −mg − k_eq(Δ_s + x). After substituting static equilibrium, m ẍ + k_eq x = 0. The same parameters give the same scalar response, natural frequency and energy as problem 3; physical motion is reflected vertically. At zero mass, x = 0 is a static constraint.
+
+The visible Series or parallel? cards on problems 02, 03 and 05 compare actual connected springs or reduced groups. Series members carry the same force and divide deformation in inverse proportion to stiffness. Parallel members share deformation and divide force in proportion to stiffness. Live values exclude static preload. The equal-spring and soft-k₅ experiments restart the current model with a 0.12 m release while preserving playback intent. Full reduction and individual values remain available under Spring-by-spring details & reduction.

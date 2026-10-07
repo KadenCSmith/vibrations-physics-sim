@@ -35,3 +35,5 @@
 .angular-acceleration-readout .math-block{color:#a8e4ce;font-size:21px;margin:9px 0 0}
 .angular-acceleration-readout .katex-display{margin:0}
 .acceleration-undetermined{background:#14110d;border-color:#d9ad87}.acceleration-undetermined>span{color:#c9b9a9}.acceleration-undetermined .math-block{color:#e1c6ac;font-size:18px}
+
+.sim-quick-links{display:flex;flex-wrap:wrap;gap:12px 23px;padding:0 0 16px;border-bottom:1px solid #292929;font-size:11px;color:#999}.sim-quick-links a{text-decoration:none;padding:5px 0}.sim-quick-links a:hover{color:#fff}.sim-quick-links a:focus-visible{outline:1px solid #dedede;outline-offset:4px}
