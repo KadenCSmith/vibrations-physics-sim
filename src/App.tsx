@@ -120,7 +120,7 @@ function SimulationWorkspace() {
   useEffect(()=>{
     const key=(event:KeyboardEvent)=>{
       const target=event.target as HTMLElement
-      if (ui.panel || target.closest('input,textarea,select,button,summary,a,[contenteditable=true],[role=tab],[role=slider]')) return
+      if (ui.panel || target.closest('input,textarea,select,button,summary,a,[contenteditable=true],[role=tab],[role=slider],[role=button]')) return
       if (event.code==='Space'){event.preventDefault();clock.setPlaying(value=>!value)}
       if (event.key==='r')clock.reset()
       if (event.key==='1')switchProblem('pendulum')
@@ -137,14 +137,13 @@ function SimulationWorkspace() {
   return <>
     <AppChrome problem={problem} onProblem={switchProblem} onResetView={()=>{setLabels(true);setForces(true);window.scrollTo({top:0,behavior:'smooth'})}}/>
     <main className="simulation-workspace">
-      <nav className="sim-quick-links" aria-label="Open and download"><a href={location.href} target="_blank" rel="noopener noreferrer">Open in new window ↗</a><a href="https://github.com/KadenCSmith/vibrations-physics-sim/archive/refs/heads/main.zip">Download ZIP ↓</a><a href="https://github.com/KadenCSmith/vibrations-physics-sim" target="_blank" rel="noopener noreferrer">GitHub ↗</a></nav>
       <div className="workspace-heading">
         <div><span className="eyebrow">ENGR 317 / VIBRATIONS / SIMULATION {problemLabel.number}</span><h1>{problemLabel.title}</h1><p>{problem==='pendulum'&&mode==='linear'?'Small-angle comparison: sin θ ≈ θ and cos θ ≈ 1.':problemLabel.subtitle}</p></div>
       </div>
       <div className="workspace-grid">
         <div className="visual-workspace">
-          <div className="scene-toolbar"><span><MoveHorizontal size={13}/> {problem==='inverted'?'drag the bar’s top to release':'drag the mass to release'}</span><div><button aria-pressed={labels} onClick={()=>setLabels(value=>!value)}>labels</button><button aria-pressed={forces} onClick={()=>setForces(value=>!value)}>forces</button></div></div>
-          {problem==='inverted'?<InvertedPendulumScene parameters={parameters} model={model} snapshot={snapshot} labels={labels} forces={forces} onDrag={drag} onRelease={()=>setDragging(false)} onBeginDrag={()=>setDragging(true)}/>:isCompound?<CompoundSpringScene parameters={parameters} model={model} snapshot={snapshot} labels={labels} forces={forces} onDrag={drag} onRelease={()=>setDragging(false)} onBeginDrag={()=>setDragging(true)}/>:<VibrationScene problem={problem} parameters={parameters} model={model} snapshot={snapshot} mode={mode} labels={labels} forces={forces} onDrag={drag} onRelease={()=>setDragging(false)} onBeginDrag={()=>setDragging(true)}/>}
+          <div className="scene-toolbar"><span><MoveHorizontal size={13}/> {problem==='inverted'?'drag the bar’s top to release':problem==='compound-inverted'?'drag the mass · click a spring to inspect':'drag the mass to release'}</span><div><button aria-pressed={labels} onClick={()=>setLabels(value=>!value)}>labels</button><button aria-pressed={forces} onClick={()=>setForces(value=>!value)}>forces</button></div></div>
+          {problem==='inverted'?<InvertedPendulumScene parameters={parameters} model={model} snapshot={snapshot} labels={labels} forces={forces} onDrag={drag} onRelease={()=>setDragging(false)} onBeginDrag={()=>setDragging(true)}/>:isCompound?<CompoundSpringScene onSpringChange={update} parameters={parameters} model={model} snapshot={snapshot} labels={labels} forces={forces} onDrag={drag} onRelease={()=>setDragging(false)} onBeginDrag={()=>setDragging(true)}/>:<VibrationScene problem={problem} parameters={parameters} model={model} snapshot={snapshot} mode={mode} labels={labels} forces={forces} onDrag={drag} onRelease={()=>setDragging(false)} onBeginDrag={()=>setDragging(true)}/>}
           <div className="live-readouts" aria-label="Live motion values">
             <div className="position-readout"><span>{problem==='inverted'?'angle θ':'position x'}</span><output data-testid="position">{number(problem==='inverted'?snapshot.theta:snapshot.x)}<small>{problem==='inverted'?' rad':' m'}</small></output></div>
             <div className="velocity-readout"><span>{problem==='inverted'?'angular velocity θ̇':'velocity v'}</span><output data-testid="velocity">{model.massless?'—':number(problem==='inverted'?snapshot.thetaDot:snapshot.v)}<small>{problem==='inverted'?' rad/s':' m/s'}</small></output></div>

@@ -12,3 +12,10 @@
 .compound-spring-scene__mass:focus-visible .mass-outline{stroke:#fff;stroke-width:3}
 .compound-spring-scene__mass .mass-hit-target{fill:transparent;stroke:none;pointer-events:all}
 .compound-spring-scene-wrap.is-dragging{cursor:grabbing}
+
+.compound-spring-scene__spring.is-interactive{cursor:pointer;outline:none}
+.compound-spring-scene__spring .spring-hit-target{stroke:transparent;stroke-width:28;pointer-events:stroke}
+.compound-spring-scene__spring .spring-selection-halo{stroke:#91c9b8;stroke-width:7;opacity:0;pointer-events:none}
+.compound-spring-scene__spring.is-interactive:hover .spring-selection-halo,.compound-spring-scene__spring.is-interactive:focus-visible .spring-selection-halo{opacity:.35}
+.compound-spring-scene__spring.is-selected .spring-selection-halo{opacity:.6}
+.compound-spring-scene__spring.is-interactive:focus-visible .spring-coil{stroke-width:2.5}

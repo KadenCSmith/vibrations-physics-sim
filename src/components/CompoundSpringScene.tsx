@@ -1,5 +1,7 @@
 import { useId, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { compoundDeformation, type Model, type Parameters, type Snapshot } from '../physics/model';
+import { COMPOUND_SPRINGS, type SpringParameterKey } from '../physics/compoundSprings';
+import { SpringInspector } from './SpringInspector';
 import './CompoundSpringScene.css';
 
 type Point = [number, number];
@@ -12,6 +14,7 @@ export type CompoundSpringSceneProps = {
   onDrag: (value: number) => void;
   onRelease: () => void;
   onBeginDrag: () => void;
+  onSpringChange?: (key: SpringParameterKey, value: number) => void;
 };
 
 function coil(start: Point, end: Point, turns = 6): string {
@@ -28,14 +31,26 @@ function coil(start: Point, end: Point, turns = 6): string {
   return points.map(([x, y], index) => `${index ? 'L' : 'M'}${x.toFixed(2)},${y.toFixed(2)}`).join(' ');
 }
 
-function Spring({ x, top, bottom, extension, label, labelX, showLabels, turns = 6 }: {
+function Spring({ x, top, bottom, extension, label, labelX, showLabels, turns = 6, name, selected = false, inspectorId, onSelect, elementRef }: {
   x: number; top: number; bottom: number; extension: number; label: string;
   labelX: number; showLabels: boolean; turns?: number;
+  name?: string; selected?: boolean; inspectorId?: string; onSelect?: () => void;
+  elementRef?: (element: SVGGElement | null) => void;
 }) {
   const color = Math.abs(extension) < .0005 ? '#aaa' : extension > 0 ? '#e8b18a' : '#a8bfff';
-  return <g className="compound-spring-scene__spring">
-    <path d={coil([x, top], [x, bottom], turns)} stroke={color} />
+  const path = coil([x, top], [x, bottom], turns);
+  return <g ref={elementRef} className={`compound-spring-scene__spring${onSelect ? ' is-interactive' : ''}${selected ? ' is-selected' : ''}`}
+    role={onSelect ? 'button' : undefined} tabIndex={onSelect ? 0 : undefined}
+    aria-label={onSelect ? `Inspect ${name}` : undefined} aria-expanded={onSelect ? selected : undefined}
+    aria-controls={selected ? inspectorId : undefined} onClick={onSelect}
+    onKeyDown={onSelect ? event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault(); event.stopPropagation(); onSelect();
+    } : undefined}>
+    {onSelect && <><title>{name} · click to inspect and edit stiffness</title><path d={path} className="spring-selection-halo" /></>}
+    <path d={path} stroke={color} className="spring-coil" />
     {showLabels && <text x={labelX} y={(top + bottom) / 2 + 4} fill={color}>{label}</text>}
+    {onSelect && <path d={path} className="spring-hit-target" />}
   </g>;
 }
 
@@ -43,14 +58,23 @@ const signed = (value: number, digits = 3) => `${value >= 0 ? '+' : ''}${value.t
 const clamp = (value: number) => Math.max(-.25, Math.min(.25, value));
 
 /** Seven physical springs; every moving endpoint follows its solved node displacement. */
-export function CompoundSpringScene({ parameters: p, model, snapshot: s, labels, forces, onDrag, onRelease, onBeginDrag }: CompoundSpringSceneProps) {
+export function CompoundSpringScene({ parameters: p, model, snapshot: s, labels, forces, onDrag, onRelease, onBeginDrag, onSpringChange }: CompoundSpringSceneProps) {
   const svg = useRef<SVGSVGElement>(null);
   const draggingRef = useRef(false);
   const dragScale = useRef(168);
   const [dragging, setDragging] = useState(false);
+  const [selectedSpring, setSelectedSpring] = useState<number | null>(null);
+  const springElements = useRef<(SVGGElement | null)[]>([]);
+  const inspectorId = `spring-inspector-${useId().replace(/:/g, '')}`;
   const patternId = `compound-grid-${useId().replace(/:/g, '')}`;
   const scale = dragging ? dragScale.current : Math.min(230, 42 / Math.max(model.xAmplitude, .25));
   const inverted = model.problem === 'compound-inverted';
+  const interactive = inverted && !!onSpringChange;
+  const springInteraction = (index: number) => interactive ? {
+    name: COMPOUND_SPRINGS[index].name, selected: selectedSpring === index, inspectorId,
+    onSelect: () => setSelectedSpring(index),
+    elementRef: (element: SVGGElement | null) => { springElements.current[index] = element; },
+  } : {};
   const y = (position: number) => inverted ? 422 - position : position;
   const deformation = compoundDeformation(p, s.x);
   const upperY = y(117 + deformation.upperJunction * scale);
@@ -99,16 +123,16 @@ export function CompoundSpringScene({ parameters: p, model, snapshot: s, labels,
       {[240, 265, 290, 315, 340, 365, 390, 415, 440, 465, 490, 515].map(x =>
         <path key={x} d={`M${x} ${y(55)}l8 ${inverted ? 8 : -8}`} className="compound-spring-scene__hatch" />)}
 
-      <Spring x={260} top={y(55)} bottom={upperY} extension={ext[0]} label="k₁" labelX={228} showLabels={labels} />
-      <Spring x={340} top={y(55)} bottom={upperY} extension={ext[1]} label="k₁" labelX={357} showLabels={labels} />
+      <Spring x={260} top={y(55)} bottom={upperY} extension={ext[0]} label="k₁" labelX={228} showLabels={labels} {...springInteraction(0)} />
+      <Spring x={340} top={y(55)} bottom={upperY} extension={ext[1]} label="k₁" labelX={357} showLabels={labels} {...springInteraction(1)} />
       <path d={`M247 ${upperY}H353`} className="compound-spring-scene__junction" />
-      <Spring x={300} top={upperY} bottom={lowerY} extension={ext[2]} label="k₂" labelX={318} showLabels={labels} />
+      <Spring x={300} top={upperY} bottom={lowerY} extension={ext[2]} label="k₂" labelX={318} showLabels={labels} {...springInteraction(2)} />
       <path d={`M247 ${lowerY}H353`} className="compound-spring-scene__junction" />
-      <Spring x={260} top={lowerY} bottom={collectorY} extension={ext[3]} label="k₃" labelX={228} showLabels={labels} />
-      <Spring x={340} top={lowerY} bottom={collectorY} extension={ext[4]} label="k₃" labelX={357} showLabels={labels} />
-      <Spring x={500} top={y(55)} bottom={collectorY} extension={ext[5]} label="k₄" labelX={520} showLabels={labels} turns={13} />
+      <Spring x={260} top={lowerY} bottom={collectorY} extension={ext[3]} label="k₃" labelX={228} showLabels={labels} {...springInteraction(3)} />
+      <Spring x={340} top={lowerY} bottom={collectorY} extension={ext[4]} label="k₃" labelX={357} showLabels={labels} {...springInteraction(4)} />
+      <Spring x={500} top={y(55)} bottom={collectorY} extension={ext[5]} label="k₄" labelX={520} showLabels={labels} turns={13} {...springInteraction(5)} />
       <path d={`M247 ${collectorY}H512`} className="compound-spring-scene__collector" />
-      <Spring x={405} top={collectorY} bottom={bobY + (inverted ? 23 : -23)} extension={ext[6]} label="k₅" labelX={424} showLabels={labels} turns={7} />
+      <Spring x={405} top={collectorY} bottom={bobY + (inverted ? 23 : -23)} extension={ext[6]} label="k₅" labelX={424} showLabels={labels} turns={7} {...springInteraction(6)} />
 
       <path d={`M354 ${y(340)}H652`} className="equilibrium-line" />
       <g role="slider" tabIndex={0} aria-label="Compound network mass release displacement"
@@ -157,10 +181,14 @@ export function CompoundSpringScene({ parameters: p, model, snapshot: s, labels,
         <path d={`M463 ${forceEnd - forceDirection * 7}L468 ${forceEnd}L473 ${forceEnd - forceDirection * 7}`} />
         <text x="488" y={bobY + 4}>F₅ = {signed(s.force, 2)} N</text>
       </g>}
-      <text x="26" y="389" className="svg-muted">{model.massless ? 'Zero mass: static spring constraint' : 'Drag the mass vertically to set its release'}</text>
+      <text x="26" y="389" className="svg-muted">{interactive ? 'Click a spring to inspect and edit its stiffness' : model.massless ? 'Zero mass: static spring constraint' : 'Drag the mass vertically to set its release'}</text>
       <text x="26" y="409" className="svg-muted">{forces ? 'Only k₅ acts directly on the mass' : 'All node motion follows the spring force balance'}</text>
     </svg>
     <div className="scene-legend"><span><i className="legend-stretch" /> additional stretch</span><span><i className="legend-compress" /> additional compression</span><span>relative to equilibrium · positive x {inverted ? 'upward' : 'downward'}</span></div>
+    {interactive && selectedSpring !== null && <SpringInspector id={inspectorId} index={selectedSpring}
+      parameters={p} snapshot={s} onChange={onSpringChange!} onClose={() => {
+        springElements.current[selectedSpring]?.focus(); setSelectedSpring(null);
+      }} />}
   </div>;
 }
 
