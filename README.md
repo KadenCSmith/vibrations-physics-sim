@@ -4,7 +4,7 @@
 
 **[Download ZIP ↓](https://github.com/KadenCSmith/vibrations-physics-sim/archive/refs/heads/main.zip)** · **[Download TAR.GZ ↓](https://github.com/KadenCSmith/vibrations-physics-sim/archive/refs/heads/main.tar.gz)**
 
-An interactive vibrations lab with five simulations, live equations, series and parallel spring lessons, energy diagrams, and a searchable formula Finder. Use it directly in your browser, or download the source project to run locally. The top of the app also includes **Open in new window**, **Download ZIP**, and **GitHub** links.
+An interactive vibrations lab with five simulations, live equations, series and parallel spring lessons, energy diagrams, and a searchable formula Finder. Use it directly in your browser, or download the source project to run locally.
 
 ## Choose a simulation
 
@@ -22,6 +22,7 @@ An interactive vibrations lab with five simulations, live equations, series and 
 - Drag the mass or bar to set a release. Arrow keys also move the focused compound mass. Use **Pause**, change speed, or scrub the graph to inspect an instant.
 - Open **Toolbox** to change physical values. Edits restart the trajectory while preserving your choice to play or pause.
 - On every spring network, the visible **Series or parallel?** cards compare live forces and deformations. Try equal springs or make k₅ softer with one click.
+- In **simulation 05**, click any spring (or focus it and press Enter/Space) to inspect its connections, live deformation, force, energy and compliance, and edit stiffness directly. The identical k₁ and k₃ pairs share their respective stiffness settings.
 - Expand **Spring-by-spring details & reduction** to trace the connections, equivalent stiffness, junction motion, and every spring's force.
 - The equation panel connects the current motion to its **Motion**, **Derivation**, and **Energy** tabs. **Finder** searches formulas, intermediate steps, and source references.
 
