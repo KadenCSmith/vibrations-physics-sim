@@ -70,7 +70,7 @@ export function SpringNetworkInfo({ parameters: p, model, snapshot: s }: SpringN
   const signedBranchForces = [s.branchForces[0] ?? 0, s.branchForces[1] ?? 0, s.branchForces[2] ?? 0, s.branchForces[3] ?? 0];
 
   return <details className="spring-network-info">
-    <summary>more info</summary>
+    <summary>Spring-by-spring details &amp; reduction</summary>
     <div className="spring-network-info__content">
       <header className="spring-network-info__heading">
         <span className="eyebrow">INSIDE THE SPRING NETWORK</span>

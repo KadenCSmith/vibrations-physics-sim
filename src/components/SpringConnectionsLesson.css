@@ -1,0 +1,24 @@
+.spring-connections{margin:0 0 20px;color:#b9b9b9}
+.spring-connections>header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.spring-connections h3{font-size:23px;font-weight:300;letter-spacing:-.025em;margin:5px 0}
+.spring-connections p{font-size:12px;line-height:1.7;color:#929292;margin:9px 0 15px}
+.spring-connections>header p{font:10px ui-monospace,monospace;white-space:nowrap}
+.spring-connections>header strong{font-weight:400;color:#e8b18a;font-size:16px}
+.spring-connections__grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.spring-connections__grid article{border:1px solid #303030;background:#080808;padding:20px;min-width:0}
+.spring-connections__grid article:first-child{border-top-color:#d9ad87}
+.spring-connections__grid article:last-child{border-top-color:#91c9b8}
+.spring-connections h4{font-size:17px;font-weight:400;margin:8px 0 14px;line-height:1.4}
+.spring-connections .math-block{font-size:14px}
+.spring-connections__values{display:grid;gap:12px;margin:18px 0}
+.spring-connections__values span,.spring-connections__values output{display:block;font:10px ui-monospace,monospace;line-height:1.8;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.spring-connections__values span{color:#888}.spring-connections__values output{color:#c3c3c3}
+.spring-connections__split{display:flex;gap:2px;margin:15px 0 7px}
+.spring-connections__split span{background:#3f3025;color:#e8b18a;min-width:0;height:8px;text-align:center;font:10px ui-monospace,monospace;overflow:hidden}
+.spring-connections__split span:last-child{background:#293547;color:#a8bfff}
+.spring-connections small{display:block;color:#868686;font-size:10px;line-height:1.7}
+.spring-connections p.spring-connections__result{color:#91c9b8;font:11px ui-monospace,monospace;line-height:1.9;margin-top:17px}
+.spring-connections p.spring-connections__note{font-size:11px;margin-top:15px}
+.spring-connections__experiments{display:flex;align-items:center;flex-wrap:wrap;gap:9px;font-size:11px;color:#777}
+.spring-connections__experiments button{padding:9px 12px;font-size:11px}
+@media(max-width:650px){.spring-connections__grid{grid-template-columns:minmax(0,1fr)}.spring-connections__grid article{padding:17px}.spring-connections>header{align-items:start}.spring-connections>header p{font-size:9px}}

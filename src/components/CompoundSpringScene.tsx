@@ -50,11 +50,13 @@ export function CompoundSpringScene({ parameters: p, model, snapshot: s, labels,
   const [dragging, setDragging] = useState(false);
   const patternId = `compound-grid-${useId().replace(/:/g, '')}`;
   const scale = dragging ? dragScale.current : Math.min(230, 42 / Math.max(model.xAmplitude, .25));
+  const inverted = model.problem === 'compound-inverted';
+  const y = (position: number) => inverted ? 422 - position : position;
   const deformation = compoundDeformation(p, s.x);
-  const upperY = 117 + deformation.upperJunction * scale;
-  const lowerY = 179 + deformation.lowerJunction * scale;
-  const collectorY = 241 + deformation.collector * scale;
-  const bobY = 340 + s.x * scale;
+  const upperY = y(117 + deformation.upperJunction * scale);
+  const lowerY = y(179 + deformation.lowerJunction * scale);
+  const collectorY = y(241 + deformation.collector * scale);
+  const bobY = y(340 + s.x * scale);
   const ext = deformation.extensions;
   const pointerPoint = (event: PointerEvent<SVGSVGElement>) => {
     const matrix = svg.current?.getScreenCTM();
@@ -63,7 +65,7 @@ export function CompoundSpringScene({ parameters: p, model, snapshot: s, labels,
   const move = (event: PointerEvent<SVGSVGElement>) => {
     if (!draggingRef.current) return;
     const point = pointerPoint(event);
-    if (point) onDrag(clamp((point.y - 340) / dragScale.current));
+    if (point) onDrag(clamp((point.y - y(340)) * (inverted ? -1 : 1) / dragScale.current));
   };
   const release = () => {
     if (!draggingRef.current) return;
@@ -75,43 +77,43 @@ export function CompoundSpringScene({ parameters: p, model, snapshot: s, labels,
     if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
     event.preventDefault();
     onBeginDrag();
-    const positive = event.key === 'ArrowDown' || event.key === 'ArrowRight';
+    const positive = event.key === (inverted ? 'ArrowUp' : 'ArrowDown') || event.key === 'ArrowRight';
     onDrag(clamp(p.x0 + (positive ? .01 : -.01)));
     onRelease();
   };
   const forceLength = Math.min(62, Math.max(13, Math.abs(s.force) * 3));
-  const forceEnd = bobY + Math.sign(s.force) * forceLength;
-  const forceDirection = Math.sign(s.force);
+  const forceDirection = Math.sign(s.force) * (inverted ? -1 : 1);
+  const forceEnd = bobY + forceDirection * forceLength;
 
   return <div className={`scene-wrap compound-spring-scene-wrap${dragging ? ' is-dragging' : ''}`}>
     <svg ref={svg} className="vibration-scene compound-spring-scene" viewBox="0 0 760 430"
-      role="group" aria-label="Animated seven-spring compound network. Drag the bottom mass vertically to set its release displacement."
+      role="group" aria-label={`Animated seven-spring ${inverted ? 'inverted ' : ''}compound network. Drag the ${inverted ? 'top' : 'bottom'} mass vertically to set its release displacement.`}
       onPointerMove={move} onPointerUp={release} onPointerCancel={release} onLostPointerCapture={release}>
       <defs><pattern id={patternId} width="38" height="38" patternUnits="userSpaceOnUse">
         <path d="M38 0H0V38" fill="none" stroke="#181818" strokeWidth=".6" />
       </pattern></defs>
       <rect width="760" height="430" fill={`url(#${patternId})`} />
-      <text x="25" y="29" className="scene-eyebrow">COMPOUND NETWORK / ONE DEGREE OF FREEDOM</text>
+      <text x="25" y="29" className="scene-eyebrow">{inverted ? 'INVERTED COMPOUND / x UPWARD' : 'COMPOUND NETWORK / ONE DEGREE OF FREEDOM'}</text>
 
-      <path d="M231 55H518" className="fixed-support" />
+      <path d={`M231 ${y(55)}H518`} className="fixed-support" />
       {[240, 265, 290, 315, 340, 365, 390, 415, 440, 465, 490, 515].map(x =>
-        <path key={x} d={`M${x} 55l8 -8`} className="compound-spring-scene__hatch" />)}
+        <path key={x} d={`M${x} ${y(55)}l8 ${inverted ? 8 : -8}`} className="compound-spring-scene__hatch" />)}
 
-      <Spring x={260} top={55} bottom={upperY} extension={ext[0]} label="k₁" labelX={228} showLabels={labels} />
-      <Spring x={340} top={55} bottom={upperY} extension={ext[1]} label="k₁" labelX={357} showLabels={labels} />
+      <Spring x={260} top={y(55)} bottom={upperY} extension={ext[0]} label="k₁" labelX={228} showLabels={labels} />
+      <Spring x={340} top={y(55)} bottom={upperY} extension={ext[1]} label="k₁" labelX={357} showLabels={labels} />
       <path d={`M247 ${upperY}H353`} className="compound-spring-scene__junction" />
       <Spring x={300} top={upperY} bottom={lowerY} extension={ext[2]} label="k₂" labelX={318} showLabels={labels} />
       <path d={`M247 ${lowerY}H353`} className="compound-spring-scene__junction" />
       <Spring x={260} top={lowerY} bottom={collectorY} extension={ext[3]} label="k₃" labelX={228} showLabels={labels} />
       <Spring x={340} top={lowerY} bottom={collectorY} extension={ext[4]} label="k₃" labelX={357} showLabels={labels} />
-      <Spring x={500} top={55} bottom={collectorY} extension={ext[5]} label="k₄" labelX={520} showLabels={labels} turns={13} />
+      <Spring x={500} top={y(55)} bottom={collectorY} extension={ext[5]} label="k₄" labelX={520} showLabels={labels} turns={13} />
       <path d={`M247 ${collectorY}H512`} className="compound-spring-scene__collector" />
-      <Spring x={405} top={collectorY} bottom={bobY - 23} extension={ext[6]} label="k₅" labelX={424} showLabels={labels} turns={7} />
+      <Spring x={405} top={collectorY} bottom={bobY + (inverted ? 23 : -23)} extension={ext[6]} label="k₅" labelX={424} showLabels={labels} turns={7} />
 
-      <path d="M354 340H652" className="equilibrium-line" />
+      <path d={`M354 ${y(340)}H652`} className="equilibrium-line" />
       <g role="slider" tabIndex={0} aria-label="Compound network mass release displacement"
         aria-valuemin={-.25} aria-valuemax={.25} aria-valuenow={p.x0}
-        aria-valuetext={`${signed(p.x0)} metres, positive downward`}
+        aria-valuetext={`${signed(p.x0)} metres, positive ${inverted ? 'upward' : 'downward'}`}
         aria-orientation="vertical" onKeyDown={keyboard}
         onPointerDown={event => {
           event.preventDefault();
@@ -130,25 +132,25 @@ export function CompoundSpringScene({ parameters: p, model, snapshot: s, labels,
         <text x="185" y={upperY + 4} className="compound-spring-scene__node-label">A</text>
         <text x="185" y={lowerY + 4} className="compound-spring-scene__node-label">B</text>
         <text x="550" y={collectorY + 4} className="compound-spring-scene__node-label">C</text>
-        <text x="26" y="74" className="svg-muted">two identical k₁</text>
+        <text x="26" y="74" className="svg-muted">{inverted ? 'support pair: two k₁' : 'two identical k₁'}</text>
         <text x="26" y="95" className="svg-muted">then k₂</text>
-        <text x="26" y="116" className="svg-muted">then two identical k₃</text>
+        <text x="26" y="116" className="svg-muted">{inverted ? 'mass-side pair: two k₃' : 'then two identical k₃'}</text>
         <text x="26" y="149" className="svg-muted">left branch ∥ k₄</text>
         <text x="26" y="172" className="svg-muted">then k₅ to the mass</text>
         <text x="26" y="219" className="svg-muted">massless junctions</text>
         <text x="26" y="239" className="compound-spring-scene__node-value">A: {signed(deformation.upperJunction)} m</text>
         <text x="26" y="258" className="compound-spring-scene__node-value">B: {signed(deformation.lowerJunction)} m</text>
         <text x="26" y="277" className="compound-spring-scene__node-value">C: {signed(deformation.collector)} m</text>
-        <text x="541" y="330" className="svg-muted">equilibrium</text>
+        <text x="541" y={y(340) - 10} className="svg-muted">equilibrium</text>
       </>}
-      <line x1="640" y1="284" x2="640" y2="403" stroke="#666" />
-      <path d="M636 397L640 404L644 397" fill="none" stroke="#666" />
+      <line x1="640" y1={inverted ? 5 : 284} x2="640" y2={inverted ? 145 : 403} stroke="#666" />
+      <path d={inverted ? "M636 12L640 5L644 12" : "M636 397L640 404L644 397"} fill="none" stroke="#666" />
       {[-.2, -.1, 0, .1, .2].map(tick => <g key={tick}>
-        <line x1="635" x2="645" y1={340 + tick * scale} y2={340 + tick * scale} stroke="#666" />
-        <text x="654" y={344 + tick * scale} className="svg-muted">{tick === 0 ? '0' : signed(tick, 1)}</text>
+        <line x1="635" x2="645" y1={y(340 + tick * scale)} y2={y(340 + tick * scale)} stroke="#666" />
+        <text x="654" y={y(340 + tick * scale) + 4} className="svg-muted">{tick === 0 ? '0' : signed(tick, 1)}</text>
       </g>)}
       <circle cx="640" cy={bobY} r="4" fill="#e8b18a" />
-      <text x="621" y="422" className="svg-muted">x (m) ↓</text>
+      <text x="621" y={inverted ? 165 : 422} className="svg-muted">x (m) {inverted ? '↑' : '↓'}</text>
 
       {forces && Math.abs(s.force) > .001 && <g className="compound-spring-scene__force">
         <line x1="468" y1={bobY} x2="468" y2={forceEnd} />
@@ -158,7 +160,7 @@ export function CompoundSpringScene({ parameters: p, model, snapshot: s, labels,
       <text x="26" y="389" className="svg-muted">{model.massless ? 'Zero mass: static spring constraint' : 'Drag the mass vertically to set its release'}</text>
       <text x="26" y="409" className="svg-muted">{forces ? 'Only k₅ acts directly on the mass' : 'All node motion follows the spring force balance'}</text>
     </svg>
-    <div className="scene-legend"><span><i className="legend-stretch" /> additional stretch</span><span><i className="legend-compress" /> additional compression</span><span>relative to equilibrium</span></div>
+    <div className="scene-legend"><span><i className="legend-stretch" /> additional stretch</span><span><i className="legend-compress" /> additional compression</span><span>relative to equilibrium · positive x {inverted ? 'upward' : 'downward'}</span></div>
   </div>;
 }
 

@@ -1,41 +1,53 @@
 # Vibrations Physics Sim
 
-A browser-first educational simulation of four vibrations problems: a spring pendulum, a five-spring network, a compound spring system, and an inverted uniform bar with two springs. The navigation, Finder, Toolbox, typography, and black canvas follow [Zombie Fire Suppression Sim](https://github.com/KadenCSmith/zombie-fire-suppression-sim).
+**[Open simulator ↗](https://kadencsmith.github.io/vibrations-physics-sim/)** · **[Open inverted spring network ↗](https://kadencsmith.github.io/vibrations-physics-sim/?problem=compound-inverted)**
 
-**[Open the public browser preview](https://kadencsmith.github.io/vibrations-physics-sim/)**
+**[Download ZIP ↓](https://github.com/KadenCSmith/vibrations-physics-sim/archive/refs/heads/main.zip)** · **[Download TAR.GZ ↓](https://github.com/KadenCSmith/vibrations-physics-sim/archive/refs/heads/main.tar.gz)**
 
-## Explore
+An interactive vibrations lab with five simulations, live equations, series and parallel spring lessons, energy diagrams, and a searchable formula Finder. Use it directly in your browser, or download the source project to run locally. The top of the app also includes **Open in new window**, **Download ZIP**, and **GitHub** links.
 
-- **Simulation** switches between the four problems. Keyboard shortcuts 1–4 select them.
-- **Toolbox** changes mass, length, spring stiffness, gravity, and initial conditions.
-- All simulations play automatically at quarter speed. Pause holds the motion until Play is pressed. Switching models, changing values, and opening drawers preserve playback; hidden tabs resume when visible.
-- Drag the mass to choose a release position, change speed, or scrub the graph.
-- The equation of motion labels each fixed input and changing value with its symbol and unit. Motion, Derivation, and Energy explain the model.
-- **more info**, below either spring system's motion values, explains each physical spring, its connections, and the live equivalent stiffness and force contributions.
-- Finder groups the complete formula library by all four simulations, shared foundations, and lecture extensions. Search concepts, derivative steps, trig identities, or source photo numbers.
+## Choose a simulation
 
-The pendulum defaults to the full equation **−mgL sin θ − kL² sin θ cos θ = J₀ θ̈**, with J₀ = mL² and ideal horizontal spring force. Its geometry, derivatives, energy, and motion use that equation. A small-angle harmonic comparison is selectable in Toolbox. Full-mode release angles range up to ±60°; the linear comparison is limited to ±12°.
+| Simulation | What to explore |
+| --- | --- |
+| [01 · Spring pendulum](https://kadencsmith.github.io/vibrations-physics-sim/?problem=pendulum) | Full sine/cosine torque model and a small-angle comparison. |
+| [02 · Five-spring network](https://kadencsmith.github.io/vibrations-physics-sim/?problem=network) | Three direct paths in parallel with a k₄–k₅ series branch. |
+| [03 · Compound spring system](https://kadencsmith.github.io/vibrations-physics-sim/?problem=compound) | Two parallel pairs in a series chain, a k₄ bypass, and final k₅. |
+| [04 · Inverted spring pendulum](https://kadencsmith.github.io/vibrations-physics-sim/?problem=inverted) | A uniform bar with spring restoring torque and destabilizing gravity; energy and Lagrange derivations. |
+| [05 · Inverted compound spring system](https://kadencsmith.github.io/vibrations-physics-sim/?problem=compound-inverted) | The seven-spring network flipped vertically: top mass, floor support, upward-positive displacement. |
 
-The spring network uses an analytical, undamped solution and follows the exam scan: k₄ and k₅ form the series branch; k₃ is a direct branch. Its coordinate is downward displacement from the loaded equilibrium. The differently numbered lecture practice network is separately labeled in Finder. Default numerical values are illustrative because the diagrams specify symbols rather than numerical data.
+## Explore the physics
 
-The compound system follows the supplied seven-spring diagram. Two k₁ springs act in parallel, followed by k₂ and a parallel pair of k₃ springs in series. This left path acts in parallel with k₄; their combined assembly is in series with the final k₅ attached to the mass. Its three massless junctions move consistently with spring force balance. The equation panel answers the requested equivalent stiffness, angular frequency in rad/s, frequency in Hz, and period in seconds. [Open simulation 03](https://kadencsmith.github.io/vibrations-physics-sim/?problem=compound).
+- Use **Simulation** or keys **1–5** to choose a model. Each model remembers its own parameters.
+- Drag the mass or bar to set a release. Arrow keys also move the focused compound mass. Use **Pause**, change speed, or scrub the graph to inspect an instant.
+- Open **Toolbox** to change physical values. Edits restart the trajectory while preserving your choice to play or pause.
+- On every spring network, the visible **Series or parallel?** cards compare live forces and deformations. Try equal springs or make k₅ softer with one click.
+- Expand **Spring-by-spring details & reduction** to trace the connections, equivalent stiffness, junction motion, and every spring's force.
+- The equation panel connects the current motion to its **Motion**, **Derivation**, and **Energy** tabs. **Finder** searches formulas, intermediate steps, and source references.
 
-The inverted uniform bar follows the requested small-angle model: **(mℓ²/3)θ̈ + (2kℓ² − mgℓ/2)θ = 0**. Both identical springs attach at the top; gravity acts at the midpoint. The Energy method and Lagrange tabs derive the equation separately, using the supplied Lagrange formula. Positive angular stiffness produces oscillation; zero stiffness produces neutral motion; negative stiffness produces exponential instability rather than a natural oscillation frequency. This preview holds at ±12° instead of extending the small-angle approximation indefinitely. Stable motion repeats at quarter speed; neutral and unstable paths stop at the angle boundary or the end of an eight-second observation window. [Open simulation 04](https://kadencsmith.github.io/vibrations-physics-sim/?problem=inverted).
+**Series:** the transmitted force is equal and deformations add, so reciprocal stiffnesses add. Two equal springs give k/2. **Parallel:** deformation is equal and forces add, so stiffnesses add. Two equal springs give 2k. Connectivity determines these rules, including paths on opposite sides of a mass.
 
-Mass can be set to exactly 0 kg. This displays the massless equilibrium constraint, without inventing an acceleration or oscillation frequency. Positive mass starts at 0.1 kg; smaller positive entries normalize to that supported minimum. With both pendulum mass and spring stiffness zero, the held angle is an illustrative choice and the equation is the identity 0 = 0.
+The new inverted network has the same equivalent stiffness and frequency as simulation 03 for the same parameters. Gravity compresses its springs at rest; x is measured upward from that loaded equilibrium. It assumes vertical guides and ideal springs that support tension and compression without buckling. The incremental equation remains m ẍ + k_eq x = 0.
 
-## Run locally
+All models are undamped, and example values are illustrative. The inverted bar uses a small-angle model and holds at ±12°; it distinguishes stable, neutral, and unstable motion. Exactly 0 kg displays an equilibrium constraint without assigning an acceleration or frequency.
 
-Requires Node.js 22.12 or newer.
+## Run the downloaded project
+
+The downloads contain source code. Requires **Node.js 22.12 or newer**; no desktop installer is included.
 
 ```sh
 npm ci
 npm run dev
 ```
 
-Open <http://127.0.0.1:5182/>. Changes appear in the browser during development. This version is a web preview; desktop installers have not been added.
+Open <http://127.0.0.1:5182/>. To build and serve the production web app:
 
-## Check and build
+```sh
+npm run build
+npm run preview
+```
+
+## Development
 
 ```sh
 npm run typecheck
@@ -44,16 +56,8 @@ npm test
 npm run build
 ```
 
-`dist/` contains the production web app. `npm run preview` serves that build locally.
+React, TypeScript and Vite provide the app; SVG draws the scenes and KaTeX displays accessible equations. Physics lives in `src/physics`, independently of playback and rendering. Linear motion is analytical; the full pendulum uses a cached numerical trajectory. GitHub Actions checks the project and publishes the browser app after updates to `main`.
 
-## Architecture
+See [physics assumptions](docs/PHYSICS.md), [teaching notes](docs/TEACHING.md), and the [38-photo reference inventory](docs/SOURCE_REFERENCES.md). Tests cover force balance, energy conservation, motion, zero-mass constraints, spring connectivity, and formula rendering.
 
-React and TypeScript provide the application shell. Vite builds the web app. SVG draws the apparatus and response graphs, and KaTeX displays accessible mathematics. Physics is independent of animation and rendering. The network and linear comparison use analytical solutions. The nonlinear pendulum uses an energy-derived period and a cached, fixed-step numerical trajectory. Playback and scrubbing evaluate that reproducible trajectory without frame-dependent integration.
-
-- `src/physics/model.ts`: parameters, analytical solutions, forces, energy, and spring-branch geometry.
-- `src/hooks/useSimulationClock.ts`: playback and seeking.
-- `src/ui/`: navigation, drawers, apparatus, graph, controls, and educational equations.
-- `src/physics/formula*.ts`: searchable equations, explanations, and source provenance.
-- `tests/`: initial conditions, torque/force balances, energy conservation, true nonlinear period, repeatable scrubbing, spring connectivity, formula rendering, and reference coverage.
-
-See [physics assumptions](docs/PHYSICS.md), [teaching notes](docs/TEACHING.md), and the [38-photo reference inventory](docs/SOURCE_REFERENCES.md). Original scans and lecture photographs are reference material and are not distributed in this repository. The UI shell is adapted from the user's existing fire simulation; no new software license has been assigned.
+The navigation and black canvas are adapted from [Zombie Fire Suppression Sim](https://github.com/KadenCSmith/zombie-fire-suppression-sim). Original scans and lecture photos remain outside this repository. No new software license has been assigned to the user's original code.

@@ -1,5 +1,8 @@
 /** Undamped models for the ENGR 317 exam-review diagrams. */
-export type ProblemId = 'pendulum' | 'network' | 'compound' | 'inverted';
+export type ProblemId = 'pendulum' | 'network' | 'compound' | 'inverted' | 'compound-inverted';
+export function isCompoundProblem(problem: ProblemId): boolean {
+  return problem === 'compound' || problem === 'compound-inverted';
+}
 export type PendulumMode = 'linear' | 'trig';
 export type InvertedStability = 'stable' | 'neutral' | 'unstable' | 'constraint' | 'free';
 
@@ -35,7 +38,7 @@ export interface CompoundStiffness {
 }
 
 export interface CompoundDeformation {
-  /** Downward increments at the nodes below 2*k1, k2, and the upper assembly. */
+  /** Increments away from the support at nodes after 2*k1, k2, and the parallel assembly. */
   upperJunction: number;
   lowerJunction: number;
   collector: number;
@@ -176,7 +179,7 @@ export function deriveCompoundStiffness(parameters: Parameters): CompoundStiffne
   return { kTop, kBottom, kLeft, kParallel, kEquivalent };
 }
 
-/** All coordinates are downward increments from the loaded static equilibrium. */
+/** Coordinates point away from the fixed support: down in 03, up in mirrored 05. */
 export function compoundDeformation(parameters: Parameters, x: number): CompoundDeformation {
   const p = sanitizeParameters(parameters);
   const { kTop, kLeft, kParallel, kEquivalent } = deriveCompoundStiffness(p);
@@ -308,12 +311,12 @@ function sampleInvertedModel(p: Parameters, time: number): Snapshot {
 }
 
 function deriveSanitizedModel(problem: ProblemId, p: Parameters): Model {
-  const k45 = problem === 'compound' ? 0 : (p.k4 * p.k5) / (p.k4 + p.k5);
+  const k45 = isCompoundProblem(problem) ? 0 : (p.k4 * p.k5) / (p.k4 + p.k5);
   const isPendulum = problem === 'pendulum';
   const inertia = isPendulum ? p.m * p.l ** 2 : p.m;
   const coordinateStiffness = isPendulum
     ? p.m * p.g * p.l + p.k * p.l ** 2
-    : problem === 'compound'
+    : isCompoundProblem(problem)
       ? deriveCompoundStiffness(p).kEquivalent
       : p.k1 + p.k2 + p.k3 + k45;
   const linearStiffness = isPendulum ? p.k + (p.m * p.g) / p.l : coordinateStiffness;
@@ -379,7 +382,7 @@ export function sampleModel(problem: ProblemId, parameters: Parameters, time: nu
   const restoringTerm = model.coordinateStiffness * q;
   const seriesJunction = problem === 'network' ? (p.k4 / (p.k4 + p.k5)) * x : 0;
   const seriesForce = -model.k45 * x;
-  const compound = problem === 'compound' ? compoundDeformation(p, x) : undefined;
+  const compound = isCompoundProblem(problem) ? compoundDeformation(p, x) : undefined;
 
   return {
     time: t,
@@ -414,13 +417,13 @@ export function sampleModel(problem: ProblemId, parameters: Parameters, time: nu
 }
 
 function deriveMasslessModel(problem: ProblemId, p: Parameters): Model {
-  const k45 = problem === 'compound' || problem === 'inverted' ? 0 : (p.k4 * p.k5) / (p.k4 + p.k5);
+  const k45 = isCompoundProblem(problem) || problem === 'inverted' ? 0 : (p.k4 * p.k5) / (p.k4 + p.k5);
   const isPendulum = problem === 'pendulum';
   const isInverted = problem === 'inverted';
   const coordinateStiffness = isPendulum
     ? p.k * p.l ** 2
     : isInverted ? 2 * p.k * p.l ** 2
-      : problem === 'compound'
+      : isCompoundProblem(problem)
         ? deriveCompoundStiffness(p).kEquivalent
         : p.k1 + p.k2 + p.k3 + k45;
   // With no mass and no pendulum spring, 0=0 leaves position/evolution undetermined.
@@ -477,8 +480,8 @@ function sampleMasslessModel(problem: ProblemId, p: Parameters, time: number, mo
     restoringTerm: 0,
     residual: 0,
     seriesJunction: 0,
-    branchExtensions: problem === 'pendulum' ? [x] : problem === 'inverted' ? [x, -x] : Array(problem === 'compound' ? 7 : 5).fill(0),
-    branchForces: problem === 'pendulum' ? [0] : Array(problem === 'compound' ? 7 : problem === 'inverted' ? 2 : 5).fill(0),
+    branchExtensions: problem === 'pendulum' ? [x] : problem === 'inverted' ? [x, -x] : Array(isCompoundProblem(problem) ? 7 : 5).fill(0),
+    branchForces: problem === 'pendulum' ? [0] : Array(isCompoundProblem(problem) ? 7 : problem === 'inverted' ? 2 : 5).fill(0),
   };
 }
 

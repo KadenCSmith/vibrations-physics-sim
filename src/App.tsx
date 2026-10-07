@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Pause, Play, RotateCcw, SkipBack, SlidersHorizontal, MoveHorizontal, ArrowUpRight } from 'lucide-react'
-import { DEFAULT_PARAMETERS, PARAMETER_LIMITS, deriveModel, sampleModel, sanitizeParameters, type Parameters, type ProblemId, type PendulumMode } from './physics/model'
+import { DEFAULT_PARAMETERS, PARAMETER_LIMITS, deriveModel, sampleModel, sanitizeParameters, isCompoundProblem, type Parameters, type ProblemId, type PendulumMode } from './physics/model'
 import { useSimulationClock } from './hooks/useSimulationClock'
 import { AppChrome } from './ui/AppChrome'
 import { CinematicUIProvider, FinderPortal, ToolboxPortal, useCinematicUI } from './ui/CinematicUI'
@@ -9,6 +9,7 @@ import VibrationScene from './ui/VibrationScene'
 import ResponseChart from './ui/ResponseChart'
 import EquationPanel from './ui/EquationPanel'
 import { FormulaLibrary } from './ui/FormulaLibrary'
+import { SpringConnectionsLesson } from './components/SpringConnectionsLesson'
 import { SpringNetworkInfo } from './components/SpringNetworkInfo'
 import { CompoundSpringScene } from './components/CompoundSpringScene'
 import { CompoundSpringInfo } from './components/CompoundSpringInfo'
@@ -20,6 +21,7 @@ const problemLabels:Record<ProblemId,{number:string;title:string;subtitle:string
   pendulum:{number:'01',title:'Spring pendulum',subtitle:'Gravity and spring torque, with sin θ and cos θ.'},
   network:{number:'02',title:'Spring network',subtitle:'Five springs. Four force paths. One moving mass.'},
   compound:{number:'03',title:'Compound spring system',subtitle:'Seven springs. Parallel pairs, series groups, and one final spring.'},
+  'compound-inverted':{number:'05',title:'Inverted compound spring system',subtitle:'The seven-spring network flipped: mass above, support below, positive x upward.'},
   inverted:{number:'04',title:'Inverted spring pendulum',subtitle:'Two restoring springs. One destabilizing gravity torque. A uniform bar.'},
 }
 const definitions: Record<keyof Parameters, Omit<ControlDefinition, 'key'|'min'|'max'|'step'>> = {
@@ -43,7 +45,7 @@ const compoundDefinitions:Partial<typeof definitions> = {
   k2:{label:'Middle spring stiffness',symbol:'k₂',unit:'N/m',note:'In series with the upper and lower parallel pairs on the left.'},
   k3:{label:'Lower pair stiffness',symbol:'k₃',unit:'N/m',note:'Each of the two identical lower springs has this stiffness. Together they contribute 2k₃.'},
   k4:{label:'Right branch stiffness',symbol:'k₄',unit:'N/m',note:'Connects the ceiling directly to the collector, in parallel with the entire left path.'},
-  k5:{label:'Final spring stiffness',symbol:'k₅',unit:'N/m',note:'Connects the collector to the mass. It is in series with the combined upper assembly.'},
+  k5:{label:'Final spring stiffness',symbol:'k₅',unit:'N/m',note:'Connects the collector to the mass. It is in series with the combined support assembly.'},
   g:{label:'Gravity',symbol:'g',unit:'m/s²',note:'Sets the loaded equilibrium through mg/k_eq. Motion x is measured from that equilibrium, so gravity does not change the vibration frequency.'},
 }
 const invertedDefinitions:Partial<typeof definitions> = {
@@ -54,22 +56,32 @@ const invertedDefinitions:Partial<typeof definitions> = {
   theta0Deg:{label:'Release angle',symbol:'θ₀',unit:'°',note:'Positive to the right of upright. This preview uses small-angle motion and stops at ±12°.'},
   omega0Deg:{label:'Initial angular velocity',symbol:'θ̇₀',unit:'°/s',note:'Positive toward increasing θ. Nonzero velocity also lets you explore the neutral drift at the stiffness threshold.'},
 }
+const mirroredDefinitions:Partial<typeof definitions> = {
+  ...compoundDefinitions,
+  m:{...compoundDefinitions.m!,note:'The top mass is guided vertically. All springs and rigid junctions are massless.'},
+  k1:{label:'Support pair stiffness',symbol:'k₁',unit:'N/m',note:'Each of the two identical springs nearest the floor has this stiffness. Their stiffnesses add to 2k₁.'},
+  k3:{label:'Mass-side pair stiffness',symbol:'k₃',unit:'N/m',note:'Two identical springs between B and collector C; their stiffnesses add to 2k₃.'},
+  k4:{label:'Bypass spring stiffness',symbol:'k₄',unit:'N/m',note:'Connects the fixed floor directly to collector C, in parallel with the complete left path.'},
+  g:{...compoundDefinitions.g!,note:'Gravity compresses the supporting springs at rest. The coordinate x is measured upward from loaded equilibrium, so gravity cancels from the motion equation.'},
+  x0:{label:'Release displacement',symbol:'x₀',unit:'m',note:'Positive upward from loaded static equilibrium.'},
+  v0:{label:'Initial velocity',symbol:'v₀',unit:'m/s',note:'Positive upward. This adds a sine term to the response.'},
+}
 function readPendulumMode():PendulumMode {
   try{return localStorage.getItem('vibrations-pendulum-mode')==='linear'?'linear':'trig'}catch{return 'trig'}
 }
 function readSessions():Record<ProblemId,Parameters> {
-  const fallback={pendulum:{...DEFAULT_PARAMETERS},network:{...DEFAULT_PARAMETERS},compound:{...DEFAULT_PARAMETERS},inverted:{...DEFAULT_PARAMETERS}}
+  const fallback={pendulum:{...DEFAULT_PARAMETERS},network:{...DEFAULT_PARAMETERS},compound:{...DEFAULT_PARAMETERS},inverted:{...DEFAULT_PARAMETERS},'compound-inverted':{...DEFAULT_PARAMETERS}}
   try {
     const value=JSON.parse(localStorage.getItem(STORAGE_KEY)??'null')
     if (!value || typeof value !== 'object') return fallback
-    return {pendulum:sanitizeParameters({...value.pendulum,omega0Deg:0},readPendulumMode()),network:sanitizeParameters(value.network??{}),compound:sanitizeParameters(value.compound??{}),inverted:sanitizeParameters(value.inverted??{})}
+    return {pendulum:sanitizeParameters({...value.pendulum,omega0Deg:0},readPendulumMode()),network:sanitizeParameters(value.network??{}),compound:sanitizeParameters(value.compound??{}),inverted:sanitizeParameters(value.inverted??{}),'compound-inverted':sanitizeParameters(value['compound-inverted']??{})}
   } catch{return fallback}
 }
 const number=(value:number,digits=3)=>Math.abs(value)<1e-9?'0.000':value.toFixed(digits)
 
 function SimulationWorkspace() {
   const ui=useCinematicUI()
-  const [problem,setProblem]=useState<ProblemId>(()=>{const id=new URLSearchParams(location.search).get('problem');return id==='network'||id==='compound'||id==='inverted'?id:'pendulum'})
+  const [problem,setProblem]=useState<ProblemId>(()=>{const id=new URLSearchParams(location.search).get('problem');return id==='network'||id==='compound'||id==='inverted'||id==='compound-inverted'?id:'pendulum'})
   const [sessions,setSessions]=useState(readSessions)
   const [labels,setLabels]=useState(true)
   const [forces,setForces]=useState(true)
@@ -78,6 +90,8 @@ function SimulationWorkspace() {
   const mode=problem==='pendulum'?pendulumMode:'linear'
   const parameters=sessions[problem]
   const model=useMemo(()=>deriveModel(problem,parameters,mode),[problem,parameters,mode])
+  const isCompound=isCompoundProblem(problem)
+  const isSpringNetwork=problem==='network'||isCompound
   const isAngular=problem==='pendulum'||problem==='inverted'
   const finiteAngleBoundary=problem==='inverted'&&Number.isFinite(model.smallAngleEndTime)
   const duration=model.massless?1:Math.max(.001,model.observationDuration??model.period*4)
@@ -113,34 +127,37 @@ function SimulationWorkspace() {
       if (event.key==='2')switchProblem('network')
       if (event.key==='3')switchProblem('compound')
       if (event.key==='4')switchProblem('inverted')
+      if (event.key==='5')switchProblem('compound-inverted')
     }
     document.addEventListener('keydown',key);return()=>document.removeEventListener('keydown',key)
   },[ui.panel,clock.setPlaying,clock.reset,switchProblem])
-  const controls:(keyof Parameters)[]=problem==='pendulum'?['m','l','k','g','theta0Deg']:problem==='inverted'?['m','l','k','g','theta0Deg','omega0Deg']:problem==='compound'?['m','k1','k2','k3','k4','k5','g','x0','v0']:['m','k1','k2','k3','k4','k5','x0','v0']
+  const controls:(keyof Parameters)[]=problem==='pendulum'?['m','l','k','g','theta0Deg']:problem==='inverted'?['m','l','k','g','theta0Deg','omega0Deg']:isCompound?['m','k1','k2','k3','k4','k5','g','x0','v0']:['m','k1','k2','k3','k4','k5','x0','v0']
   const problemLabel=problemLabels[problem]
   const invertedExample=(kind:'stable'|'neutral'|'unstable')=>{setSessions(old=>({...old,inverted:{...DEFAULT_PARAMETERS,k:kind==='stable'?8:kind==='neutral'?DEFAULT_PARAMETERS.m*DEFAULT_PARAMETERS.g/(4*DEFAULT_PARAMETERS.l):2,theta0Deg:kind==='neutral'?3:8,omega0Deg:kind==='neutral'?2:0}}));clock.reset()}
   return <>
     <AppChrome problem={problem} onProblem={switchProblem} onResetView={()=>{setLabels(true);setForces(true);window.scrollTo({top:0,behavior:'smooth'})}}/>
     <main className="simulation-workspace">
+      <nav className="sim-quick-links" aria-label="Open and download"><a href={location.href} target="_blank" rel="noopener noreferrer">Open in new window ↗</a><a href="https://github.com/KadenCSmith/vibrations-physics-sim/archive/refs/heads/main.zip">Download ZIP ↓</a><a href="https://github.com/KadenCSmith/vibrations-physics-sim" target="_blank" rel="noopener noreferrer">GitHub ↗</a></nav>
       <div className="workspace-heading">
         <div><span className="eyebrow">ENGR 317 / VIBRATIONS / SIMULATION {problemLabel.number}</span><h1>{problemLabel.title}</h1><p>{problem==='pendulum'&&mode==='linear'?'Small-angle comparison: sin θ ≈ θ and cos θ ≈ 1.':problemLabel.subtitle}</p></div>
       </div>
       <div className="workspace-grid">
         <div className="visual-workspace">
           <div className="scene-toolbar"><span><MoveHorizontal size={13}/> {problem==='inverted'?'drag the bar’s top to release':'drag the mass to release'}</span><div><button aria-pressed={labels} onClick={()=>setLabels(value=>!value)}>labels</button><button aria-pressed={forces} onClick={()=>setForces(value=>!value)}>forces</button></div></div>
-          {problem==='inverted'?<InvertedPendulumScene parameters={parameters} model={model} snapshot={snapshot} labels={labels} forces={forces} onDrag={drag} onRelease={()=>setDragging(false)} onBeginDrag={()=>setDragging(true)}/>:problem==='compound'?<CompoundSpringScene parameters={parameters} model={model} snapshot={snapshot} labels={labels} forces={forces} onDrag={drag} onRelease={()=>setDragging(false)} onBeginDrag={()=>setDragging(true)}/>:<VibrationScene problem={problem} parameters={parameters} model={model} snapshot={snapshot} mode={mode} labels={labels} forces={forces} onDrag={drag} onRelease={()=>setDragging(false)} onBeginDrag={()=>setDragging(true)}/>}
+          {problem==='inverted'?<InvertedPendulumScene parameters={parameters} model={model} snapshot={snapshot} labels={labels} forces={forces} onDrag={drag} onRelease={()=>setDragging(false)} onBeginDrag={()=>setDragging(true)}/>:isCompound?<CompoundSpringScene parameters={parameters} model={model} snapshot={snapshot} labels={labels} forces={forces} onDrag={drag} onRelease={()=>setDragging(false)} onBeginDrag={()=>setDragging(true)}/>:<VibrationScene problem={problem} parameters={parameters} model={model} snapshot={snapshot} mode={mode} labels={labels} forces={forces} onDrag={drag} onRelease={()=>setDragging(false)} onBeginDrag={()=>setDragging(true)}/>}
           <div className="live-readouts" aria-label="Live motion values">
             <div className="position-readout"><span>{problem==='inverted'?'angle θ':'position x'}</span><output data-testid="position">{number(problem==='inverted'?snapshot.theta:snapshot.x)}<small>{problem==='inverted'?' rad':' m'}</small></output></div>
             <div className="velocity-readout"><span>{problem==='inverted'?'angular velocity θ̇':'velocity v'}</span><output data-testid="velocity">{model.massless?'—':number(problem==='inverted'?snapshot.thetaDot:snapshot.v)}<small>{problem==='inverted'?' rad/s':' m/s'}</small></output></div>
             <div className="acceleration-readout"><span>{problem==='inverted'?'angular acceleration θ̈':'acceleration a'}</span><output data-testid="acceleration">{model.massless?'—':number(problem==='inverted'?snapshot.thetaDDot:snapshot.a)}<small>{problem==='inverted'?' rad/s²':' m/s²'}</small></output></div>
             <div><span>{model.stability==='unstable'?'growth rate λ':problem==='pendulum'&&mode==='trig'?'oscillation frequency':'natural frequency'}</span><output data-testid="frequency">{model.massless?'—':model.stability==='unstable'?number(model.growthRate??0,2):number(model.frequency,2)}<small>{model.massless?' massless':model.stability==='unstable'?' 1/s':' Hz'}</small></output></div>
           </div>
+          {isSpringNetwork&&<SpringConnectionsLesson parameters={parameters} model={model} snapshot={snapshot} onExample={example=>{setSessions(old=>({...old,[problem]:{...old[problem],k1:30,k2:30,k3:30,k4:30,k5:example==='equal'?30:5,x0:.12,v0:0}}));clock.reset()}}/>}
           {problem==='network'&&<SpringNetworkInfo parameters={parameters} model={model} snapshot={snapshot}/>}
-          {problem==='compound'&&<CompoundSpringInfo parameters={parameters} model={model} snapshot={snapshot}/>}
+          {isCompound&&<CompoundSpringInfo parameters={parameters} model={model} snapshot={snapshot}/>}
           {problem==='inverted'&&<InvertedPendulumInfo parameters={parameters} model={model} snapshot={snapshot}/>}
           {angleLimitReached&&<p className="massless-note">Small-angle preview held at ±12°. The linear equations remain shown at this boundary. Use Restart or change a value to explore again.</p>}
           {model.massless?<p className="massless-note">At 0 kg there is no inertial oscillation. {model.stability==='free'?'With k = 0 as well, the equation is 0 = 0; the chosen angle is held illustratively.':'The apparatus shows the equilibrium constraint; acceleration and frequency are not defined.'}</p>:<ResponseChart problem={problem} parameters={parameters} model={model} snapshot={snapshot} mode={mode} duration={duration} onSeek={seek}/>}
-          <section className="lesson-prompt"><span className="eyebrow">TRY A SMALL EXPERIMENT</span><p>{problem==='inverted'?'Lower each spring’s k through mg/(4ℓ). Watch the angular stiffness change sign: oscillation gives way to neutral drift, then instability.':problem==='pendulum'?'Double the mass. Does the whole frequency halve? Watch the gravity term and the spring term separately.':problem==='compound'?'Make k₅ softer. Watch how the displacement divides between the upper assembly and the final spring, then compare k_eq with both.':'Make k₄ much softer than k₅. Watch the junction, then compare the deformation of the two springs.'}</p><button onClick={()=>ui.open('toolbox')}>try it in toolbox <ArrowUpRight size={14}/></button></section>
+          <section className="lesson-prompt"><span className="eyebrow">TRY A SMALL EXPERIMENT</span><p>{problem==='inverted'?'Lower each spring’s k through mg/(4ℓ). Watch the angular stiffness change sign: oscillation gives way to neutral drift, then instability.':problem==='pendulum'?'Double the mass. Does the whole frequency halve? Watch the gravity term and the spring term separately.':isCompound?'Make k₅ softer. Watch how the displacement divides between the support assembly and the final spring, then compare k_eq with both.':'Make k₄ much softer than k₅. Watch the junction, then compare the deformation of the two springs.'}</p><button onClick={()=>ui.open('toolbox')}>try it in toolbox <ArrowUpRight size={14}/></button></section>
         </div>
         <EquationPanel problem={problem} parameters={parameters} model={model} snapshot={snapshot} mode={mode}/>
       </div>
@@ -149,8 +166,8 @@ function SimulationWorkspace() {
     <ToolboxPortal>
       <section><p className="control-context">{problemLabel.number} / {problemLabel.title}</p><p>Physical edits restart the motion from its release condition. The scene and equations use the same values.</p>
         {problem==='pendulum'&&<div className="pendulum-model-controls"><span className="drawer-section-label">PENDULUM EQUATION</span><div><button aria-pressed={mode==='trig'} onClick={()=>changePendulumMode('trig')}>Full sin θ / cos θ</button><button aria-pressed={mode==='linear'} onClick={()=>changePendulumMode('linear')}>Small-angle comparison</button></div><p>{mode==='trig'?'The motion follows your full torque equation. A larger release angle changes the period.':'sin θ ≈ θ and cos θ ≈ 1 give a harmonic approximation near equilibrium.'}</p></div>}
-        {controls.map(key=><ParameterControl key={key} definition={{key,...definitions[key],...(problem==='compound'?compoundDefinitions[key]:problem==='inverted'?invertedDefinitions[key]:{}),...PARAMETER_LIMITS[key],...(key==='theta0Deg'&&mode==='linear'?{min:-12,max:12}:{})}} value={parameters[key]} onChange={value=>update(key,value)}/>)}
-        <div className="toolbox-actions"><button onClick={resetParameters}>Restore example values</button>{problem==='inverted'?<><button onClick={()=>invertedExample('stable')}>Stable example</button><button onClick={()=>invertedExample('neutral')}>Balance torques · neutral</button><button onClick={()=>invertedExample('unstable')}>Gravity wins · unstable</button></>:problem==='pendulum'?<><button onClick={()=>update('k',0)}>Pure pendulum · k = 0</button>{mode==='trig'&&<button onClick={()=>update('theta0Deg',40)}>Try a 40° release</button>}</>:<button onClick={()=>{setSessions(old=>({...old,[problem]:{...old[problem],k1:30,k2:30,k3:30,k4:30,k5:30}}));clock.reset()}}>{problem==='compound'?'Seven equal springs':'Five equal springs'}</button>}</div>
+        {controls.map(key=><ParameterControl key={key} definition={{key,...definitions[key],...(problem==='compound-inverted'?mirroredDefinitions[key]:isCompound?compoundDefinitions[key]:problem==='inverted'?invertedDefinitions[key]:{}),...PARAMETER_LIMITS[key],...(key==='theta0Deg'&&mode==='linear'?{min:-12,max:12}:{})}} value={parameters[key]} onChange={value=>update(key,value)}/>)}
+        <div className="toolbox-actions"><button onClick={resetParameters}>Restore example values</button>{problem==='inverted'?<><button onClick={()=>invertedExample('stable')}>Stable example</button><button onClick={()=>invertedExample('neutral')}>Balance torques · neutral</button><button onClick={()=>invertedExample('unstable')}>Gravity wins · unstable</button></>:problem==='pendulum'?<><button onClick={()=>update('k',0)}>Pure pendulum · k = 0</button>{mode==='trig'&&<button onClick={()=>update('theta0Deg',40)}>Try a 40° release</button>}</>:<button onClick={()=>{setSessions(old=>({...old,[problem]:{...old[problem],k1:30,k2:30,k3:30,k4:30,k5:30}}));clock.reset()}}>{isCompound?'Seven equal springs':'Five equal springs'}</button>}</div>
         <div className="toolbox-result"><span>{model.massless?'Massless limit':model.stability==='unstable'?'Unstable · no natural oscillation':model.stability==='neutral'?'Neutral · no finite period':problem==='pendulum'&&mode==='trig'?'Measured oscillation rhythm':'Natural frequency'}</span><strong>{model.massless?model.stability==='free'?'0 = 0 · free constraint':'Equilibrium constraint':model.stability==='unstable'?`Growth rate ${(model.growthRate??0).toFixed(3)} 1/s`:`${(problem==='pendulum'&&mode==='trig'?2*Math.PI/model.period:model.omega).toFixed(3)} rad/s`}</strong><small>{model.massless?'No inertia: acceleration and oscillation frequency are undefined.':noCycle?(model.stability==='neutral'?'Zero restoring frequency; motion holds its angle or drifts at constant angular velocity. No finite period.':'The growth rate describes exponential motion; no real oscillation frequency or period is assigned.'):`${model.frequency.toFixed(3)} Hz · period ${model.period.toFixed(3)} s`}</small></div>
       </section>
     </ToolboxPortal>

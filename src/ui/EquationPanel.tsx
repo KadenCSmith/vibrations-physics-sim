@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import type { Model, Parameters, PendulumMode, ProblemId, Snapshot } from '../physics/model';
-import { compoundDeformation, deriveCompoundStiffness } from '../physics/model';
+import { compoundDeformation, deriveCompoundStiffness, isCompoundProblem } from '../physics/model';
 import { MathFormula } from './Math';
 import { InvertedEquationPanel } from './InvertedEquationPanel';
 
@@ -109,16 +109,17 @@ function MasslessEquationPanel({ problem, parameters: p, snapshot: s, model, mod
   </aside>;
 }
 
-function CompoundEquationPanel({ parameters: p, model, snapshot: s }: EquationPanelProps) {
+function CompoundEquationPanel({ problem, parameters: p, model, snapshot: s }: EquationPanelProps) {
   const [tab, setTab] = useState<EquationTab>('motion');
   const tabId = useId();
+  const inverted = problem === 'compound-inverted';
   const stiffness = deriveCompoundStiffness(p);
   const nodes = compoundDeformation(p, s.x);
   const labels = ['k₁ · left', 'k₁ · right', 'k₂', 'k₃ · left', 'k₃ · right', 'k₄', 'k₅'];
   const springValues = [p.k1, p.k1, p.k2, p.k3, p.k3, p.k4, p.k5];
   const springEnergies = nodes.extensions.map((extension, index) => 0.5 * springValues[index] * extension ** 2);
   const physicalEnergy = springEnergies.reduce((sum, energy) => sum + energy, 0);
-  const staticShift = p.m * p.g / stiffness.kEquivalent;
+  const staticShift = (inverted ? -1 : 1) * p.m * p.g / stiffness.kEquivalent;
   const total = Math.max(0, s.totalEnergy);
   return <aside className="equation-panel" aria-label="Compound network equations and learning notes">
     <div className="equation-panel-heading">
@@ -126,7 +127,7 @@ function CompoundEquationPanel({ parameters: p, model, snapshot: s }: EquationPa
       {!model.massless && <span className="live-equation-label"><span className="live-dot" /> Live</span>}
     </div>
     <section className="equation-card eom-card" aria-label="Compound equation and live substitution">
-      <p className="equation-card-kicker">03 / Compound network · seven springs</p>
+      <p className="equation-card-kicker">{inverted ? '05 / Inverted compound network' : '03 / Compound network'} · seven springs</p>
       <MathFormula tex={model.massless ? String.raw`k_{\mathrm{eq}}x=0,\qquad m=0` : String.raw`m\ddot x+k_{\mathrm{eq}}x=0`} />
       <p className="equation-note">{model.massless
         ? 'Zero inertia leaves a spring-force constraint. Positive equivalent stiffness fixes x = 0; no acceleration or oscillation frequency is determined by division.'
@@ -198,16 +199,16 @@ function CompoundEquationPanel({ parameters: p, model, snapshot: s }: EquationPa
         </section>}
         <section className="equation-card">
           <p className="equation-card-kicker">Position is measured from loaded equilibrium</p>
-          <MathFormula tex={String.raw`\Delta_s=\frac{mg}{k_{\mathrm{eq}}}=${texNumber(staticShift)}\;\mathrm m`} />
-          <p className="equation-note">This is the total static extension from the unstretched configuration. The animated x is an additional displacement about that loaded equilibrium. Gravity shifts the resting position; the graph and spring-extension readouts show the vibration increments.</p>
+          <MathFormula tex={String.raw`\Delta_s=${inverted ? '-' : ''}\frac{mg}{k_{\mathrm{eq}}}=${texNumber(staticShift)}\;\mathrm m`} />
+          <p className="equation-note">{inverted ? 'The negative static extension means compression under gravity. The mass and junctions are guided vertically; the ideal springs can carry tension and compression without buckling. Positive x is upward.' : 'This is the total static extension from the unstretched configuration. Positive x is downward.'} The animated x is an additional displacement about loaded equilibrium. Gravity shifts the resting position; the graph and spring-extension readouts show the vibration increments.</p>
         </section>
       </>}
 
       {tab === 'derivation' && <>
         <section className="equation-card">
           <p className="equation-card-kicker">1 / Combine each parallel pair</p>
-          <MathFormula tex={String.raw`k_{\mathrm{top}}=2k_1,\qquad k_{\mathrm{bottom}}=2k_3`} />
-          <MathFormula className="numeric-substitution" tex={String.raw`\begin{aligned}k_{\mathrm{top}}&=2(${texNumber(p.k1)})=${texNumber(stiffness.kTop)}\;\mathrm{N/m}\\k_{\mathrm{bottom}}&=2(${texNumber(p.k3)})=${texNumber(stiffness.kBottom)}\;\mathrm{N/m}\end{aligned}`} />
+          <MathFormula tex={String.raw`k_A=2k_1,\qquad k_B=2k_3`} />
+          <MathFormula className="numeric-substitution" tex={String.raw`\begin{aligned}k_A&=2(${texNumber(p.k1)})=${texNumber(stiffness.kTop)}\;\mathrm{N/m}\\k_B&=2(${texNumber(p.k3)})=${texNumber(stiffness.kBottom)}\;\mathrm{N/m}\end{aligned}`} />
           <p className="equation-note">Springs between the same two rigid nodes share extension, so their forces and stiffnesses add. There are two physical k₁ springs and two physical k₃ springs.</p>
         </section>
         <section className="equation-card">
@@ -223,7 +224,7 @@ function CompoundEquationPanel({ parameters: p, model, snapshot: s }: EquationPa
           <p className="equation-note">The complete left chain and k₄ connect the fixed support to the same collector.</p>
         </section>
         <section className="equation-card">
-          <p className="equation-card-kicker">4 / Put k₅ in series with the whole upper assembly</p>
+          <p className="equation-card-kicker">4 / Put k₅ in series with the whole support assembly</p>
           <MathFormula tex={String.raw`k_{\mathrm{eq}}=\frac{k_{\mathrm{parallel}}k_5}{k_{\mathrm{parallel}}+k_5}`} />
           <MathFormula className="numeric-substitution" tex={String.raw`k_{\mathrm{eq}}=\frac{${texNumber(stiffness.kParallel)}(${texNumber(p.k5)})}{${texNumber(stiffness.kParallel)}+${texNumber(p.k5)}}=${texNumber(stiffness.kEquivalent)}\;\mathrm{N/m}`} />
           <p className="equation-note">All support-to-mass load paths pass through the final k₅ spring. Only its force acts directly on the mass.</p>
@@ -232,16 +233,16 @@ function CompoundEquationPanel({ parameters: p, model, snapshot: s }: EquationPa
           <p className="equation-card-kicker">5 / Solve the massless junctions</p>
           <MathFormula tex={String.raw`\begin{aligned}c&=\frac{k_5}{k_{\mathrm{parallel}}+k_5}x\\F_L&=k_{\mathrm{left}}c\\u&=\frac{F_L}{2k_1},\qquad v=u+\frac{F_L}{k_2}\end{aligned}`} />
           <div className="series-readouts">
-            <div><span>u / upper junction</span><output>{number(nodes.upperJunction)} m</output></div>
-            <div><span>v / lower junction</span><output>{number(nodes.lowerJunction)} m</output></div>
-            <div><span>c / collector above k₅</span><output>{number(nodes.collector)} m</output></div>
+            <div><span>u / junction A</span><output>{number(nodes.upperJunction)} m</output></div>
+            <div><span>v / junction B</span><output>{number(nodes.lowerJunction)} m</output></div>
+            <div><span>c / collector C</span><output>{number(nodes.collector)} m</output></div>
           </div>
           <MathFormula tex={String.raw`\begin{aligned}2k_1u&=k_2(v-u)=2k_3(c-v)\\F_L+k_4c&=k_5(x-c)\end{aligned}`} />
-          <p className="equation-note">All coordinates point downward from equilibrium. Each junction has zero net force. For x &gt; 0, all seven signed spring extensions are positive.</p>
+          <p className="equation-note">All coordinates point {inverted ? 'upward' : 'downward'} from equilibrium. Each junction has zero net force. For x &gt; 0, all seven signed spring extensions are positive.</p>
         </section>
         <section className="equation-card">
           <p className="equation-card-kicker">6 / Apply Newton’s law about loaded equilibrium</p>
-          <MathFormula tex={String.raw`\begin{aligned}mg&=k_{\mathrm{eq}}\Delta_s\\m\ddot x&=mg-k_{\mathrm{eq}}(\Delta_s+x)\\&=-k_{\mathrm{eq}}x\end{aligned}`} />
+          <MathFormula tex={String.raw`\begin{aligned}${inverted ? '-mg' : 'mg'}&=k_{\mathrm{eq}}\Delta_s\\m\ddot x&=${inverted ? '-mg' : 'mg'}-k_{\mathrm{eq}}(\Delta_s+x)\\&=-k_{\mathrm{eq}}x\end{aligned}`} />
           <p className="equation-note">The static preload cancels weight. Internal spring forces are transmitted through the massless nodes; they are not seven separate external forces on the mass.</p>
         </section>
       </>}
@@ -298,7 +299,7 @@ export function EquationPanel({ problem, parameters: p, model, snapshot: s, mode
     return <InvertedEquationPanel parameters={p} model={model} snapshot={s} />;
   }
 
-  if (problem === 'compound') {
+  if (isCompoundProblem(problem)) {
     return <CompoundEquationPanel problem={problem} parameters={p} model={model} snapshot={s} mode={mode} />;
   }
 
